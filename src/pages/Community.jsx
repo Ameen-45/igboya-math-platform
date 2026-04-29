@@ -4,132 +4,548 @@ import { useEffect, useState } from 'react'
 export default function Community() {
   const [isLoaded, setIsLoaded] = useState(false)
   const [hoveredCard, setHoveredCard] = useState(null)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
-  useEffect(() => { setIsLoaded(true) }, [])
+  useEffect(() => {
+    setIsLoaded(true)
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
-  const whatsappLink = "https://chat.whatsapp.com/LPoXBwl6Y9ZDkyYPcHvKbx?mode=hqrt3"
+  const whatsappLink = "https://chat.whatsapp.com/LPoXBwl6Y9ZDkyYPcHvKbx"
 
   const youtubeChannels = [
     {
-      name: 'Igboya Math Official',
-      description: 'Official YouTube channel with video lessons',
-      subscribers: '1.2K subscribers',
-      link: 'https://youtube.com/c/your-channel',
+      name: 'IGBOYA Math Official',
+      description: 'Complete video lessons and tutorials',
+      subscribers: '2.5K+ subscribers',
+      videos: '120+ videos',
+      link: 'https://youtube.com/@igboyamath',
+      color: '#EF4444'
     },
     {
       name: 'Math Concepts Explained',
-      description: 'Detailed explanations of complex topics',
-      subscribers: '850+ subscribers',
-      link: 'https://youtube.com/c/math-concepts',
+      description: 'Deep dive into complex topics',
+      subscribers: '1.8K+ subscribers',
+      videos: '85+ videos',
+      link: 'https://youtube.com/@mathconcepts',
+      color: '#DC2626'
+    },
+    {
+      name: 'Problem Solving Hub',
+      description: 'Step-by-step solutions to problems',
+      subscribers: '950+ subscribers',
+      videos: '64+ videos',
+      link: 'https://youtube.com/@problemsolving',
+      color: '#B91C1C'
     }
   ]
 
   const communityFeatures = [
-    { title: "Instant Help", description: "Get quick answers from fellow learners", icon: "⚡", delay: 100 },
-    { title: "Live Discussions", description: "Participate in real-time problem solving", icon: "💬", delay: 200 },
-    { title: "Resource Sharing", description: "Share and discover helpful materials", icon: "📁", delay: 300 }
+    { title: "Instant Help", description: "Get quick answers from fellow learners", icon: "⚡", delay: 100, color: "#F59E0B" },
+    { title: "Live Discussions", description: "Participate in real-time problem solving", icon: "💬", delay: 200, color: "#10B981" },
+    { title: "Resource Sharing", description: "Share and discover helpful materials", icon: "📁", delay: 300, color: "#6366F1" },
+    { title: "Study Groups", description: "Form groups for collaborative learning", icon: "👥", delay: 400, color: "#8B5CF6" }
+  ]
+
+  const upcomingEvents = [
+    { name: "Algebra Masterclass", date: "Every Monday", time: "6:00 PM", attendees: 45 },
+    { name: "Calculus Study Group", date: "Every Wednesday", time: "7:00 PM", attendees: 32 },
+    { name: "Problem Solving Session", date: "Every Friday", time: "5:00 PM", attendees: 28 }
+  ]
+
+  const stats = [
+    { label: "Active Members", value: "1,250+", icon: "👥", color: "#6366F1" },
+    { label: "Messages Sent", value: "15.2K+", icon: "💬", color: "#10B981" },
+    { label: "Problems Solved", value: "3.8K+", icon: "✅", color: "#F59E0B" },
+    { label: "Resources Shared", value: "450+", icon: "📚", color: "#8B5CF6" }
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 pb-24 overflow-x-hidden">
-      {/* Background Elements */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-10 w-72 h-72 bg-green-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-1000"></div>
-        <div className="absolute top-3/4 left-1/3 w-64 h-64 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse delay-500"></div>
-      </div>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #F1F5F9 100%)',
+      padding: isMobile ? '20px' : '32px',
+      position: 'relative',
+      overflowX: 'hidden'
+    }}>
+      
+      {/* Subtle Background Pattern */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundImage: `radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.03) 0%, transparent 50%),
+                         radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.03) 0%, transparent 50%)`,
+        pointerEvents: 'none',
+        zIndex: 0
+      }}></div>
 
-      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-12">
+      <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        
         {/* Header */}
-        <div className={`text-center mb-16 transform transition-all duration-1000 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <div className="relative inline-block mb-6">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-blue-500 rounded-3xl blur-xl opacity-50 animate-pulse"></div>
-            <div className="relative inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-500 to-green-600 rounded-3xl text-white text-4xl shadow-xl border-4 border-white/30 animate-bounce-slow">
-              👥
+        <div style={{
+          textAlign: 'center',
+          marginBottom: isMobile ? '32px' : '48px'
+        }}>
+          <div style={{
+            display: 'inline-block',
+            marginBottom: isMobile ? '16px' : '24px'
+          }}>
+            <div style={{
+              position: 'relative',
+              display: 'inline-block'
+            }}>
+              <div style={{
+                position: 'absolute',
+                inset: '-20px',
+                background: 'linear-gradient(135deg, #6366F1, #8B5CF6, #EC4899)',
+                borderRadius: '50%',
+                filter: 'blur(30px)',
+                opacity: 0.2
+              }}></div>
+              <div style={{
+                width: isMobile ? '70px' : '80px',
+                height: isMobile ? '70px' : '80px',
+                background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                borderRadius: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto',
+                boxShadow: '0 20px 40px -12px rgba(99, 102, 241, 0.3)'
+              }}>
+                <span style={{ fontSize: isMobile ? '32px' : '36px' }}>👥</span>
+              </div>
             </div>
-            <div className="absolute -top-3 -right-3 w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold animate-ping opacity-75">NEW</div>
           </div>
-          <h1 className="text-5xl font-extrabold text-gray-900 mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-            Math Community Hub
+          <h1 style={{
+            fontSize: isMobile ? '32px' : '48px',
+            fontWeight: '700',
+            background: 'linear-gradient(135deg, #6366F1, #8B5CF6, #EC4899)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            marginBottom: '12px',
+            letterSpacing: '-0.02em'
+          }}>
+            Community Hub
           </h1>
-          <p className="text-gray-600 text-lg max-w-lg mx-auto animate-text-fade">
-            Connect, learn, and grow together with fellow math enthusiasts.
+          <p style={{
+            fontSize: isMobile ? '15px' : '18px',
+            color: '#64748B',
+            maxWidth: '600px',
+            margin: '0 auto'
+          }}>
+            Connect, learn, and grow together with fellow mathematics enthusiasts
           </p>
         </div>
 
-        {/* WhatsApp Group */}
-        <div className={`relative mb-12 transform transition-all duration-700 delay-300 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
+        {/* Community Stats */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          gap: isMobile ? '12px' : '20px',
+          marginBottom: isMobile ? '32px' : '48px'
+        }}>
+          {stats.map((stat, index) => (
+            <div key={index} style={{
+              background: 'white',
+              borderRadius: '16px',
+              padding: isMobile ? '16px' : '20px',
+              textAlign: 'center',
+              border: '1px solid #E2E8F0',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.05)';
+              e.currentTarget.style.borderColor = '#C7D2FE';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+              e.currentTarget.style.borderColor = '#E2E8F0';
+            }}>
+              <div style={{ fontSize: isMobile ? '28px' : '32px', marginBottom: '8px' }}>{stat.icon}</div>
+              <div style={{ fontSize: isMobile ? '20px' : '24px', fontWeight: 'bold', color: '#0F172A', marginBottom: '4px' }}>{stat.value}</div>
+              <div style={{ fontSize: '12px', color: '#64748B' }}>{stat.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* WhatsApp Group Card */}
+        <div style={{
+          marginBottom: isMobile ? '32px' : '48px'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '24px',
+            border: '1px solid #E2E8F0',
+            overflow: 'hidden',
+            transition: 'all 0.3s ease'
+          }}
           onMouseEnter={() => setHoveredCard('whatsapp')}
-          onMouseLeave={() => setHoveredCard(null)}
-        >
-          <div className={`absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-3xl blur-xl transition-all duration-500 ${hoveredCard === 'whatsapp' ? 'opacity-50 scale-105' : 'opacity-30'}`}></div>
-          <div className="relative bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/50 overflow-hidden group hover:shadow-3xl transition-shadow duration-300">
-            <div className="flex flex-col md:flex-row items-center md:space-x-6">
-              <div className="flex-shrink-0 relative mb-4 md:mb-0">
-                <div className="absolute inset-0 bg-green-400 rounded-2xl blur-md animate-pulse"></div>
-                <div className="relative w-20 h-20 bg-green-500 rounded-2xl flex items-center justify-center text-white text-3xl transform group-hover:scale-110 transition-transform duration-300">
+          onMouseLeave={() => setHoveredCard(null)}>
+            <div style={{
+              padding: isMobile ? '24px' : '32px'
+            }}>
+              <div style={{
+                display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                alignItems: isMobile ? 'flex-start' : 'center',
+                gap: isMobile ? '20px' : '24px'
+              }}>
+                <div style={{
+                  width: isMobile ? '60px' : '70px',
+                  height: isMobile ? '60px' : '70px',
+                  background: 'linear-gradient(135deg, #10B981, #059669)',
+                  borderRadius: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: isMobile ? '28px' : '32px',
+                  flexShrink: 0
+                }}>
                   💬
                 </div>
-              </div>
-              <div className="flex-1">
-                <h2 className="text-3xl font-bold text-gray-800 mb-2">WhatsApp Study Group</h2>
-                <p className="text-gray-600 mb-4 leading-relaxed">
-                  Get instant help with math problems, participate in discussions, share resources, and connect with fellow learners in real-time.
-                </p>
-                <div className="inline-flex items-center space-x-2 bg-green-50 rounded-full px-4 py-2 mb-4 animate-float">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  <span className="text-green-700 font-medium">250+ Active Members Online</span>
-                </div>
-                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="inline-block w-full md:w-auto">
-                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-6 py-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
-                    <div className="flex items-center justify-center space-x-3">
-                      <span className="text-xl">💬</span>
-                      <span className="text-white font-bold text-lg">Join WhatsApp Group</span>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{
+                    fontSize: isMobile ? '22px' : '28px',
+                    fontWeight: '700',
+                    color: '#0F172A',
+                    marginBottom: '8px'
+                  }}>
+                    WhatsApp Study Group
+                  </h2>
+                  <p style={{
+                    color: '#64748B',
+                    fontSize: isMobile ? '13px' : '15px',
+                    marginBottom: '12px',
+                    lineHeight: '1.5'
+                  }}>
+                    Get instant help with math problems, participate in discussions, share resources, 
+                    and connect with fellow learners in real-time.
+                  </p>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '20px'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: '#ECFDF5',
+                      padding: '6px 12px',
+                      borderRadius: '9999px'
+                    }}>
+                      <span style={{ width: '8px', height: '8px', background: '#10B981', borderRadius: '50%' }}></span>
+                      <span style={{ fontSize: '12px', color: '#065F46', fontWeight: '500' }}>250+ Active Members</span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: '#FEF3C7',
+                      padding: '6px 12px',
+                      borderRadius: '9999px'
+                    }}>
+                      <span style={{ fontSize: '12px', color: '#92400E', fontWeight: '500' }}>⏱️ 24/7 Support</span>
                     </div>
                   </div>
-                </a>
+                  <a 
+                    href={whatsappLink} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-block',
+                      background: 'linear-gradient(135deg, #10B981, #059669)',
+                      color: 'white',
+                      padding: isMobile ? '12px 24px' : '14px 32px',
+                      borderRadius: '12px',
+                      textDecoration: 'none',
+                      fontWeight: '600',
+                      fontSize: isMobile ? '14px' : '15px',
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 8px 20px -8px rgba(16, 185, 129, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    💬 Join WhatsApp Group →
+                  </a>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Community Features */}
-        <div className={`mb-12 transform transition-all duration-700 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <h3 className="text-2xl font-bold text-gray-700 mb-8 text-center">Why Join Our Community?</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {communityFeatures.map((feature, index) => (
-              <div key={index} className="relative group bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-blue-100 rounded-xl flex items-center justify-center text-3xl mb-4 transform group-hover:scale-110 transition-transform duration-300">
-                  {feature.icon}
+        {/* Community Features & YouTube Section */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gap: isMobile ? '20px' : '24px',
+          marginBottom: isMobile ? '32px' : '48px'
+        }}>
+          
+          {/* Community Features */}
+          <div style={{
+            background: 'white',
+            borderRadius: '24px',
+            padding: isMobile ? '20px' : '24px',
+            border: '1px solid #E2E8F0'
+          }}>
+            <h3 style={{
+              fontSize: isMobile ? '18px' : '20px',
+              fontWeight: '600',
+              color: '#0F172A',
+              marginBottom: '20px'
+            }}>
+              🌟 Why Join Our Community?
+            </h3>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              {communityFeatures.map((feature, index) => (
+                <div key={index} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  padding: '12px',
+                  background: '#F8FAFC',
+                  borderRadius: '14px',
+                  transition: 'transform 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(4px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateX(0)'}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    background: `linear-gradient(135deg, ${feature.color}15, ${feature.color}25)`,
+                    borderRadius: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '22px'
+                  }}>
+                    {feature.icon}
+                  </div>
+                  <div>
+                    <h4 style={{ fontWeight: '600', color: '#0F172A', marginBottom: '4px', fontSize: '14px' }}>{feature.title}</h4>
+                    <p style={{ fontSize: '12px', color: '#64748B' }}>{feature.description}</p>
+                  </div>
                 </div>
-                <h4 className="font-bold text-gray-800 mb-2">{feature.title}</h4>
-                <p className="text-gray-600 text-sm">{feature.description}</p>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          {/* Upcoming Events */}
+          <div style={{
+            background: 'white',
+            borderRadius: '24px',
+            padding: isMobile ? '20px' : '24px',
+            border: '1px solid #E2E8F0'
+          }}>
+            <h3 style={{
+              fontSize: isMobile ? '18px' : '20px',
+              fontWeight: '600',
+              color: '#0F172A',
+              marginBottom: '20px'
+            }}>
+              📅 Upcoming Events
+            </h3>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              {upcomingEvents.map((event, index) => (
+                <div key={index} style={{
+                  padding: '14px',
+                  background: '#F8FAFC',
+                  borderRadius: '14px',
+                  transition: 'transform 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(4px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateX(0)'}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <h4 style={{ fontWeight: '600', color: '#0F172A', fontSize: '14px' }}>{event.name}</h4>
+                    <span style={{ fontSize: '11px', color: '#6366F1', background: '#EEF2FF', padding: '4px 8px', borderRadius: '8px' }}>
+                      👥 {event.attendees} attending
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: '#64748B' }}>
+                    <span>📅 {event.date}</span>
+                    <span>⏰ {event.time}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button style={{
+              width: '100%',
+              marginTop: '16px',
+              padding: '10px',
+              background: '#F8FAFC',
+              border: '1px solid #E2E8F0',
+              borderRadius: '12px',
+              color: '#6366F1',
+              fontSize: '13px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#EEF2FF';
+              e.currentTarget.style.borderColor = '#C7D2FE';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#F8FAFC';
+              e.currentTarget.style.borderColor = '#E2E8F0';
+            }}>
+              View All Events →
+            </button>
           </div>
         </div>
 
         {/* YouTube Channels */}
-        <div className={`bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-6 mb-12 border border-white/50 transform transition-all duration-700 delay-700 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">YouTube Channels</h2>
-          <p className="text-gray-600 text-sm mb-6">Watch video lessons and tutorials</p>
-          <div className="space-y-4">
+        <div style={{
+          background: 'white',
+          borderRadius: '24px',
+          padding: isMobile ? '20px' : '24px',
+          border: '1px solid #E2E8F0',
+          marginBottom: isMobile ? '24px' : '32px'
+        }}>
+          <div style={{ marginBottom: '20px' }}>
+            <h3 style={{
+              fontSize: isMobile ? '18px' : '20px',
+              fontWeight: '600',
+              color: '#0F172A',
+              marginBottom: '4px'
+            }}>
+              📺 YouTube Channels
+            </h3>
+            <p style={{ fontSize: '13px', color: '#64748B' }}>
+              Watch video lessons and tutorials from our expert instructors
+            </p>
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+            gap: '16px'
+          }}>
             {youtubeChannels.map((channel, index) => (
-              <a key={index} href={channel.link} target="_blank" rel="noopener noreferrer"
-                 className="group relative flex items-center space-x-4 p-4 bg-red-50 rounded-2xl hover:bg-red-100 transition-all duration-300 border border-red-200 hover:border-red-300 transform hover:-translate-y-1">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800 text-sm">{channel.name}</h3>
-                  <p className="text-gray-600 text-xs">{channel.description}</p>
-                  <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full mt-1">{channel.subscribers}</span>
+              <a 
+                key={index} 
+                href={channel.link} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{
+                  textDecoration: 'none',
+                  padding: '16px',
+                  background: '#F8FAFC',
+                  borderRadius: '16px',
+                  border: '1px solid #E2E8F0',
+                  transition: 'all 0.3s ease',
+                  display: 'block'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.05)';
+                  e.currentTarget.style.borderColor = '#FECACA';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.borderColor = '#E2E8F0';
+                }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    background: `linear-gradient(135deg, ${channel.color}, ${channel.color}CC)`,
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '20px'
+                  }}>
+                    📺
+                  </div>
+                  <div>
+                    <h4 style={{ fontWeight: '600', color: '#0F172A', fontSize: '14px', marginBottom: '2px' }}>{channel.name}</h4>
+                    <p style={{ fontSize: '11px', color: '#EF4444' }}>{channel.subscribers}</p>
+                  </div>
                 </div>
-                <div className="text-red-500 transform group-hover:translate-x-2 transition-transform duration-300">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
+                <p style={{ fontSize: '12px', color: '#64748B', marginBottom: '8px' }}>{channel.description}</p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <span style={{ fontSize: '10px', color: '#64748B', background: '#F1F5F9', padding: '2px 6px', borderRadius: '4px' }}>
+                    🎬 {channel.videos}
+                  </span>
                 </div>
               </a>
             ))}
           </div>
+        </div>
+
+        {/* CTA Banner */}
+        <div style={{
+          background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+          borderRadius: '24px',
+          padding: isMobile ? '28px 20px' : '40px',
+          textAlign: 'center',
+          color: 'white'
+        }}>
+          <h3 style={{
+            fontSize: isMobile ? '20px' : '24px',
+            fontWeight: '700',
+            marginBottom: '12px'
+          }}>
+            Ready to Join Our Community?
+          </h3>
+          <p style={{
+            fontSize: isMobile ? '13px' : '15px',
+            opacity: 0.9,
+            marginBottom: '24px',
+            maxWidth: '500px',
+            marginLeft: 'auto',
+            marginRight: 'auto'
+          }}>
+            Connect with thousands of learners and start your mathematics journey today
+          </p>
+          <a 
+            href={whatsappLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-block',
+              background: 'white',
+              color: '#6366F1',
+              padding: isMobile ? '12px 28px' : '14px 36px',
+              borderRadius: '12px',
+              textDecoration: 'none',
+              fontWeight: '600',
+              fontSize: isMobile ? '14px' : '15px',
+              transition: 'transform 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+            💬 Join WhatsApp Group Now →
+          </a>
         </div>
       </div>
     </div>

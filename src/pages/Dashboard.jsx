@@ -14,6 +14,16 @@ export default function Dashboard({ user }) {
   const [recentActivity, setRecentActivity] = useState([])
   const [showAchievements, setShowAchievements] = useState(false)
   const [selectedTimeframe, setSelectedTimeframe] = useState('week')
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  // Check for mobile view
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     const savedStats = JSON.parse(localStorage.getItem('mathGeniusStats')) || {
@@ -44,15 +54,17 @@ export default function Dashboard({ user }) {
     const actions = [
       { id: 'algebra', icon: '🧮', title: 'Algebra', description: 'Equations & Functions', path: '/topics/algebra', color: '#3B82F6' },
       { id: 'geometry', icon: '📐', title: 'Geometry', description: 'Shapes & Spaces', path: '/topics/geometry', color: '#10B981' },
-      { id: 'trigonometry', icon: '📏', title: 'Trigonometry', description: 'Angles & Triangles', path: '/topics/trigonometry', color: '#8B5CF6' }
+      { id: 'trigonometry', icon: '📏', title: 'Trigonometry', description: 'Angles & Triangles', path: '/topics/trigonometry', color: '#8B5CF6' },
+      { id: 'calculus', icon: '📈', title: 'Calculus', description: 'Limits & Derivatives', path: '/topics/calculus', color: '#F59E0B' }
     ].map(topic => ({ ...topic, progress: savedProgress[topic.id] || 0 }))
 
     setQuickActions(actions)
 
     const savedTasks = JSON.parse(localStorage.getItem('dailyTasks')) || [
-      { id: 1, task: 'Complete 1 algebra lesson', completed: false, points: 10 },
-      { id: 2, task: 'Solve 3 practice problems', completed: false, points: 15 },
-      { id: 3, task: 'Review previous lessons', completed: false, points: 5 }
+      { id: 1, task: 'Complete 1 lesson', completed: false, points: 10, category: 'algebra' },
+      { id: 2, task: 'Solve 3 practice problems', completed: false, points: 15, category: 'geometry' },
+      { id: 3, task: 'Watch a video lesson', completed: false, points: 5, category: 'trigonometry' },
+      { id: 4, task: 'Review previous topics', completed: false, points: 8, category: 'review' }
     ]
     setDailyTasks(savedTasks)
 
@@ -92,7 +104,7 @@ export default function Dashboard({ user }) {
   }
 
   const clearAllData = () => {
-    if (window.confirm('Are you sure you want to reset all your progress?')) {
+    if (window.confirm('Are you sure you want to reset all your progress? This cannot be undone.')) {
       localStorage.removeItem('mathGeniusStats')
       localStorage.removeItem('topicProgress')
       localStorage.removeItem('dailyTasks')
@@ -129,110 +141,72 @@ export default function Dashboard({ user }) {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 50%, #0F172A 100%)',
-      padding: 'clamp(16px, 4vw, 24px)',
+      background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #F1F5F9 100%)',
+      padding: isMobile ? '16px' : '24px',
       position: 'relative',
       overflowX: 'hidden'
     }}>
       
-      {/* Animated Background Orbs */}
-      <div style={{
-        position: 'absolute',
-        top: '-20%',
-        left: '-10%',
-        width: '60%',
-        height: '60%',
-        background: 'radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%)',
-        borderRadius: '50%',
-        animation: 'floatOrb 15s ease-in-out infinite',
-        pointerEvents: 'none'
-      }}></div>
-      
-      <div style={{
-        position: 'absolute',
-        bottom: '-20%',
-        right: '-10%',
-        width: '60%',
-        height: '60%',
-        background: 'radial-gradient(circle, rgba(236, 72, 153, 0.3) 0%, transparent 70%)',
-        borderRadius: '50%',
-        animation: 'floatOrb 12s ease-in-out infinite reverse',
-        pointerEvents: 'none'
-      }}></div>
-
-      {/* Grid Pattern */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundImage: `
-          linear-gradient(rgba(139, 92, 246, 0.05) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(139, 92, 246, 0.05) 1px, transparent 1px)
-        `,
-        backgroundSize: '40px 40px',
-        pointerEvents: 'none'
-      }}></div>
-
-      <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+      {/* Main Container */}
+      <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
         
         {/* Hero Section */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(31, 27, 75, 0.95) 100%)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: 'clamp(20px, 5vw, 28px)',
-          padding: 'clamp(20px, 5vw, 32px)',
-          marginBottom: 'clamp(20px, 5vw, 32px)',
-          border: '1px solid rgba(139, 92, 246, 0.3)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+          background: 'white',
+          borderRadius: isMobile ? '20px' : '24px',
+          padding: isMobile ? '20px' : '28px',
+          marginBottom: isMobile ? '20px' : '28px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
+          border: '1px solid #E2E8F0'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: isMobile ? 'column' : 'row',
+            justifyContent: 'space-between', 
+            alignItems: isMobile ? 'flex-start' : 'center', 
+            gap: isMobile ? '20px' : '0'
+          }}>
             <div style={{ flex: 1 }}>
               <h1 style={{
-                fontSize: 'clamp(24px, 6vw, 36px)',
+                fontSize: isMobile ? '24px' : '32px',
                 fontWeight: 'bold',
-                background: 'linear-gradient(135deg, #F472B6, #A78BFA, #60A5FA)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
+                color: '#0F172A',
                 marginBottom: '8px'
               }}>
                 {getGreeting()}, {user?.name || 'Scholar'}! 👋
               </h1>
-              <p style={{ color: '#94A3B8', fontSize: 'clamp(13px, 4vw, 16px)', marginBottom: '24px' }}>
+              <p style={{ color: '#64748B', fontSize: isMobile ? '13px' : '15px', marginBottom: '20px' }}>
                 Stay consistent. Build momentum. Master mathematics one lesson at a time.
               </p>
               
               {/* Progress Card */}
               <div style={{
-                background: 'rgba(15, 23, 42, 0.8)',
+                background: '#F8FAFC',
                 borderRadius: '16px',
                 padding: '16px',
-                maxWidth: '100%',
-                border: '1px solid rgba(139, 92, 246, 0.2)'
+                border: '1px solid #E2E8F0'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'clamp(12px, 3.5vw, 14px)', marginBottom: '8px', color: '#CBD5E1' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '10px', color: '#475569' }}>
                   <span>📊 Daily Progress</span>
-                  <span>{completedTasksCount}/{dailyTasks.length} tasks</span>
+                  <span style={{ fontWeight: '600' }}>{completedTasksCount}/{dailyTasks.length} tasks</span>
                 </div>
                 <div style={{
                   width: '100%',
-                  background: 'rgba(255, 255, 255, 0.1)',
+                  background: '#E2E8F0',
                   borderRadius: '9999px',
                   height: '8px',
                   overflow: 'hidden'
                 }}>
                   <div style={{
                     width: `${(completedTasksCount / dailyTasks.length) * 100}%`,
-                    background: 'linear-gradient(90deg, #8B5CF6, #EC4899)',
+                    background: 'linear-gradient(90deg, #6366F1, #8B5CF6)',
                     height: '100%',
                     borderRadius: '9999px',
                     transition: 'width 0.7s ease-out'
                   }}></div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: 'clamp(10px, 3vw, 12px)' }}>
-                  <span style={{ color: '#CBD5E1' }}>✨ +{totalTasksPoints} XP today</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '12px' }}>
+                  <span style={{ color: '#6366F1', fontWeight: '500' }}>✨ +{totalTasksPoints} XP today</span>
                   <button 
                     onClick={resetDailyTasks}
                     style={{
@@ -240,10 +214,9 @@ export default function Dashboard({ user }) {
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      fontSize: 'clamp(10px, 3vw, 12px)',
-                      transition: 'color 0.2s'
+                      fontSize: '12px'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = '#E2E8F0'}
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#6366F1'}
                     onMouseLeave={(e) => e.currentTarget.style.color = '#94A3B8'}
                   >
                     🔄 Reset
@@ -252,22 +225,22 @@ export default function Dashboard({ user }) {
               </div>
             </div>
 
-            {/* Next Achievement Badge */}
-            {nextAchievement && (
+            {/* Next Achievement Badge - Hide on mobile */}
+            {!isMobile && nextAchievement && (
               <div style={{
-                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2))',
+                background: 'linear-gradient(135deg, #EEF2FF, #F5F3FF)',
                 borderRadius: '16px',
                 padding: '16px',
-                minWidth: '200px',
-                border: '1px solid rgba(139, 92, 246, 0.3)'
+                minWidth: '220px',
+                border: '1px solid #C7D2FE'
               }}>
-                <div style={{ fontSize: '12px', color: '#A78BFA', marginBottom: '8px' }}>🎯 Next Achievement</div>
+                <div style={{ fontSize: '12px', color: '#6366F1', marginBottom: '8px', fontWeight: '500' }}>🎯 Next Achievement</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{ fontSize: '28px' }}>{nextAchievement.icon}</span>
                   <div>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: 'white' }}>{nextAchievement.name}</div>
-                    <div style={{ fontSize: '10px', color: '#94A3B8' }}>{nextAchievement.description}</div>
-                    <div style={{ fontSize: '10px', color: '#F59E0B', marginTop: '4px' }}>+{nextAchievement.points} XP</div>
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#1E293B' }}>{nextAchievement.name}</div>
+                    <div style={{ fontSize: '11px', color: '#64748B' }}>{nextAchievement.description}</div>
+                    <div style={{ fontSize: '11px', color: '#F59E0B', marginTop: '4px', fontWeight: '500' }}>+{nextAchievement.points} XP</div>
                   </div>
                 </div>
               </div>
@@ -275,153 +248,149 @@ export default function Dashboard({ user }) {
           </div>
         </div>
 
-        {/* Stats Grid - Responsive */}
+        {/* Stats Grid - Mobile optimized */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: 'clamp(12px, 3vw, 16px)',
-          marginBottom: 'clamp(20px, 5vw, 32px)'
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          gap: isMobile ? '12px' : '16px',
+          marginBottom: isMobile ? '20px' : '28px'
         }}>
           {statsDisplay.map((stat, index) => (
             <div key={index} style={{
-              background: 'rgba(30, 41, 59, 0.8)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: 'clamp(14px, 4vw, 20px)',
-              padding: 'clamp(16px, 4vw, 20px)',
-              border: '1px solid rgba(139, 92, 246, 0.2)',
+              background: 'white',
+              borderRadius: '16px',
+              padding: isMobile ? '16px' : '20px',
+              border: '1px solid #E2E8F0',
               transition: 'all 0.3s ease',
-              cursor: 'pointer',
-              textAlign: 'center'
+              textAlign: 'center',
+              cursor: 'pointer'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 20px 25px -12px rgba(0, 0, 0, 0.3)';
-              e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.05)';
+              e.currentTarget.style.borderColor = '#C7D2FE';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
               e.currentTarget.style.boxShadow = 'none';
-              e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+              e.currentTarget.style.borderColor = '#E2E8F0';
             }}>
-              <div style={{ fontSize: 'clamp(28px, 7vw, 36px)', marginBottom: '8px' }}>{stat.icon}</div>
-              <div style={{ fontSize: 'clamp(22px, 6vw, 28px)', fontWeight: 'bold', color: 'white', marginBottom: '4px' }}>{stat.value}</div>
-              <div style={{ fontSize: 'clamp(11px, 3vw, 13px)', color: '#94A3B8', marginBottom: '4px' }}>{stat.label}</div>
-              <div style={{ fontSize: 'clamp(9px, 2.5vw, 11px)', color: '#64748B' }}>{stat.description}</div>
+              <div style={{ fontSize: isMobile ? '28px' : '32px', marginBottom: '8px' }}>{stat.icon}</div>
+              <div style={{ fontSize: isMobile ? '20px' : '24px', fontWeight: 'bold', color: '#0F172A', marginBottom: '4px' }}>{stat.value}</div>
+              <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '4px' }}>{stat.label}</div>
+              <div style={{ fontSize: '10px', color: '#94A3B8' }}>{stat.description}</div>
             </div>
           ))}
         </div>
 
-        {/* Main Grid - Responsive */}
+        {/* Main Grid - Mobile optimized (stack on mobile) */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: 'clamp(16px, 4vw, 24px)'
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+          gap: isMobile ? '20px' : '24px'
         }}>
           
-          {/* Continue Learning Section */}
-          <div style={{
-            background: 'rgba(30, 41, 59, 0.8)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: 'clamp(20px, 5vw, 24px)',
-            padding: 'clamp(20px, 5vw, 24px)',
-            border: '1px solid rgba(139, 92, 246, 0.2)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-              <h2 style={{ fontSize: 'clamp(18px, 5vw, 20px)', fontWeight: '600', color: 'white' }}>📖 Continue Learning</h2>
-              <Link to="/topics" style={{ 
-                color: '#A78BFA', 
-                fontSize: 'clamp(12px, 3.5vw, 14px)', 
-                textDecoration: 'none',
-                padding: '6px 12px',
-                background: 'rgba(139, 92, 246, 0.1)',
-                borderRadius: '8px',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)';
-                e.currentTarget.style.color = '#C4B5FD';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)';
-                e.currentTarget.style.color = '#A78BFA';
-              }}>
-                Browse All Topics →
-              </Link>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {quickActions.map((topic, index) => (
-                <Link key={index} to={topic.path} style={{ textDecoration: 'none' }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: 'clamp(12px, 4vw, 16px)',
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    borderRadius: 'clamp(14px, 4vw, 16px)',
-                    border: '1px solid rgba(139, 92, 246, 0.15)',
-                    transition: 'all 0.3s ease',
-                    cursor: 'pointer',
-                    flexWrap: 'wrap',
-                    gap: '12px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)';
-                    e.currentTarget.style.transform = 'translateX(4px)';
-                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(15, 23, 42, 0.6)';
-                    e.currentTarget.style.transform = 'translateX(0)';
-                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.15)';
-                  }}>
+          {/* Continue Learning Section - Spans 2 columns on desktop */}
+          <div style={{ gridColumn: isMobile ? '1' : 'span 2' }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '20px',
+              padding: isMobile ? '20px' : '24px',
+              border: '1px solid #E2E8F0'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                <h2 style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '600', color: '#0F172A' }}>📖 Continue Learning</h2>
+                <Link to="/topics" style={{ 
+                  color: '#6366F1', 
+                  fontSize: '13px', 
+                  textDecoration: 'none',
+                  padding: '6px 12px',
+                  background: '#EEF2FF',
+                  borderRadius: '8px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#C7D2FE';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#EEF2FF';
+                }}>
+                  Browse All Topics →
+                </Link>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {quickActions.map((topic, index) => (
+                  <Link key={index} to={topic.path} style={{ textDecoration: 'none' }}>
                     <div style={{
-                      width: 'clamp(48px, 12vw, 56px)',
-                      height: 'clamp(48px, 12vw, 56px)',
-                      background: `linear-gradient(135deg, ${topic.color}20, ${topic.color}40)`,
-                      borderRadius: 'clamp(12px, 3vw, 16px)',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 'clamp(24px, 6vw, 28px)'
+                      padding: isMobile ? '12px' : '16px',
+                      background: '#F8FAFC',
+                      borderRadius: '14px',
+                      border: '1px solid #E2E8F0',
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer',
+                      gap: isMobile ? '12px' : '16px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#F1F5F9';
+                      e.currentTarget.style.transform = 'translateX(4px)';
+                      e.currentTarget.style.borderColor = '#C7D2FE';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#F8FAFC';
+                      e.currentTarget.style.transform = 'translateX(0)';
+                      e.currentTarget.style.borderColor = '#E2E8F0';
                     }}>
-                      {topic.icon}
-                    </div>
-                    <div style={{ flex: 1, minWidth: '150px' }}>
-                      <h3 style={{ fontWeight: '600', color: 'white', marginBottom: '4px', fontSize: 'clamp(14px, 4vw, 16px)' }}>{topic.title}</h3>
-                      <p style={{ fontSize: 'clamp(11px, 3vw, 12px)', color: '#94A3B8', marginBottom: '8px' }}>{topic.description}</p>
-                      <div style={{ width: '100%', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '9999px', height: '4px', overflow: 'hidden' }}>
-                        <div style={{
-                          width: `${topic.progress}%`,
-                          background: `linear-gradient(90deg, ${topic.color}, ${topic.color}CC)`,
-                          height: '100%',
-                          borderRadius: '9999px',
-                          transition: 'width 0.5s'
-                        }}></div>
+                      <div style={{
+                        width: isMobile ? '48px' : '56px',
+                        height: isMobile ? '48px' : '56px',
+                        background: `linear-gradient(135deg, ${topic.color}15, ${topic.color}25)`,
+                        borderRadius: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: isMobile ? '24px' : '28px'
+                      }}>
+                        {topic.icon}
                       </div>
-                      <p style={{ fontSize: 'clamp(9px, 2.5vw, 10px)', color: '#64748B', marginTop: '4px' }}>{topic.progress}% completed</p>
+                      <div style={{ flex: 1 }}>
+                        <h3 style={{ fontWeight: '600', color: '#0F172A', marginBottom: '4px', fontSize: isMobile ? '15px' : '16px' }}>{topic.title}</h3>
+                        <p style={{ fontSize: '12px', color: '#64748B', marginBottom: '8px' }}>{topic.description}</p>
+                        <div style={{ width: '100%', background: '#E2E8F0', borderRadius: '9999px', height: '4px', overflow: 'hidden' }}>
+                          <div style={{
+                            width: `${topic.progress}%`,
+                            background: topic.color,
+                            height: '100%',
+                            borderRadius: '9999px',
+                            transition: 'width 0.5s'
+                          }}></div>
+                        </div>
+                        <p style={{ fontSize: '10px', color: '#94A3B8', marginTop: '4px' }}>{topic.progress}% completed</p>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Daily Tasks & Activity Column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(16px, 4vw, 24px)' }}>
+          {/* Right Column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '20px' : '24px' }}>
             {/* Daily Tasks */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(31, 27, 75, 0.95) 100%)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: 'clamp(20px, 5vw, 24px)',
-              padding: 'clamp(20px, 5vw, 24px)',
-              border: '1px solid rgba(236, 72, 153, 0.3)'
+              background: 'white',
+              borderRadius: '20px',
+              padding: isMobile ? '20px' : '24px',
+              border: '1px solid #E2E8F0'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-                <h3 style={{ fontSize: 'clamp(16px, 4.5vw, 18px)', fontWeight: '600', color: 'white' }}>🎯 Today's Goals</h3>
-                <span style={{ fontSize: 'clamp(11px, 3vw, 12px)', background: 'rgba(236, 72, 153, 0.2)', padding: '4px 12px', borderRadius: '9999px', color: '#F472B6' }}>
+                <h3 style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '600', color: '#0F172A' }}>🎯 Today's Goals</h3>
+                <span style={{ fontSize: '12px', background: '#EEF2FF', padding: '4px 12px', borderRadius: '9999px', color: '#6366F1', fontWeight: '500' }}>
                   {completedTasksCount}/{dailyTasks.length} Complete
                 </span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {dailyTasks.map((task) => (
                   <div 
                     key={task.id} 
@@ -430,37 +399,35 @@ export default function Dashboard({ user }) {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      padding: 'clamp(10px, 3vw, 12px)',
-                      background: task.completed ? 'rgba(30, 41, 59, 0.6)' : 'rgba(15, 23, 42, 0.6)',
+                      padding: '12px',
+                      background: task.completed ? '#F8FAFC' : '#FFFFFF',
                       borderRadius: '12px',
-                      border: '1px solid rgba(139, 92, 246, 0.15)',
+                      border: '1px solid #E2E8F0',
                       cursor: 'pointer',
                       transition: 'all 0.2s',
-                      opacity: task.completed ? 0.6 : 1,
-                      flexWrap: 'wrap',
-                      gap: '8px'
+                      opacity: task.completed ? 0.7 : 1
                     }}
                     onMouseEnter={(e) => {
                       if (!task.completed) {
-                        e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)';
-                        e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+                        e.currentTarget.style.background = '#F8FAFC';
+                        e.currentTarget.style.borderColor = '#C7D2FE';
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!task.completed) {
-                        e.currentTarget.style.background = 'rgba(15, 23, 42, 0.6)';
-                        e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.15)';
+                        e.currentTarget.style.background = '#FFFFFF';
+                        e.currentTarget.style.borderColor = '#E2E8F0';
                       }
                     }}>
                     <span style={{
-                      fontSize: 'clamp(12px, 3.5vw, 14px)',
-                      color: task.completed ? '#94A3B8' : 'white',
+                      fontSize: '13px',
+                      color: task.completed ? '#94A3B8' : '#1E293B',
                       textDecoration: task.completed ? 'line-through' : 'none',
                       flex: 1
                     }}>
                       {task.task}
                     </span>
-                    <span style={{ fontSize: 'clamp(10px, 3vw, 11px)', background: 'rgba(139, 92, 246, 0.2)', padding: '4px 8px', borderRadius: '8px', color: '#C4B5FD' }}>
+                    <span style={{ fontSize: '11px', background: '#EEF2FF', padding: '4px 8px', borderRadius: '8px', color: '#6366F1', fontWeight: '500' }}>
                       +{task.points} XP
                     </span>
                   </div>
@@ -470,32 +437,31 @@ export default function Dashboard({ user }) {
 
             {/* Recent Activity */}
             <div style={{
-              background: 'rgba(30, 41, 59, 0.8)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: 'clamp(20px, 5vw, 24px)',
-              padding: 'clamp(20px, 5vw, 24px)',
-              border: '1px solid rgba(139, 92, 246, 0.2)'
+              background: 'white',
+              borderRadius: '20px',
+              padding: isMobile ? '20px' : '24px',
+              border: '1px solid #E2E8F0'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-                <h3 style={{ fontWeight: '600', color: 'white', fontSize: 'clamp(16px, 4.5vw, 18px)' }}>⏱️ Recent Activity</h3>
+                <h3 style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '600', color: '#0F172A' }}>⏱️ Recent Activity</h3>
                 {recentActivity.length > 0 && (
                   <button 
                     onClick={() => { setRecentActivity([]); localStorage.setItem('recentActivity', JSON.stringify([])) }}
-                    style={{ fontSize: 'clamp(10px, 3vw, 11px)', color: '#64748B', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.2s' }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = '#94A3B8'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = '#64748B'}
+                    style={{ fontSize: '11px', color: '#94A3B8', background: 'none', border: 'none', cursor: 'pointer' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#6366F1'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = '#94A3B8'}
                   >
                     Clear All
                   </button>
                 )}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {recentActivity.length > 0 ? recentActivity.slice(0, 5).map((activity, index) => (
-                  <div key={activity.id || index} style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <div key={activity.id || index} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{
                       width: '32px',
                       height: '32px',
-                      background: 'rgba(139, 92, 246, 0.2)',
+                      background: '#EEF2FF',
                       borderRadius: '9999px',
                       display: 'flex',
                       alignItems: 'center',
@@ -505,16 +471,16 @@ export default function Dashboard({ user }) {
                       {activity.icon}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: 'clamp(12px, 3.5vw, 13px)', color: 'white' }}>{activity.action}</p>
-                      <p style={{ fontSize: 'clamp(9px, 2.5vw, 10px)', color: '#64748B' }}>{activity.time}</p>
+                      <p style={{ fontSize: '13px', color: '#1E293B' }}>{activity.action}</p>
+                      <p style={{ fontSize: '10px', color: '#94A3B8' }}>{activity.time}</p>
                     </div>
-                    {activity.points && <p style={{ fontSize: 'clamp(10px, 3vw, 11px)', color: '#10B981', fontWeight: '500' }}>+{activity.points} XP</p>}
+                    {activity.points && <p style={{ fontSize: '11px', color: '#10B981', fontWeight: '500' }}>+{activity.points} XP</p>}
                   </div>
                 )) : (
                   <div style={{ textAlign: 'center', padding: '24px' }}>
                     <div style={{ fontSize: '32px', marginBottom: '8px' }}>📊</div>
-                    <p style={{ fontSize: 'clamp(12px, 3.5vw, 13px)', color: '#64748B' }}>No activity yet</p>
-                    <p style={{ fontSize: 'clamp(10px, 3vw, 11px)', color: '#475569' }}>Complete tasks to see your progress!</p>
+                    <p style={{ fontSize: '13px', color: '#64748B' }}>No activity yet</p>
+                    <p style={{ fontSize: '11px', color: '#94A3B8' }}>Complete tasks to see your progress!</p>
                   </div>
                 )}
               </div>
@@ -522,18 +488,17 @@ export default function Dashboard({ user }) {
 
             {/* Motivation Card */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: 'clamp(20px, 5vw, 24px)',
-              padding: 'clamp(20px, 5vw, 24px)',
+              background: 'linear-gradient(135deg, #EEF2FF, #F5F3FF)',
+              borderRadius: '20px',
+              padding: isMobile ? '20px' : '24px',
               textAlign: 'center',
-              border: '1px solid rgba(139, 92, 246, 0.3)'
+              border: '1px solid #C7D2FE'
             }}>
-              <div style={{ fontSize: 'clamp(28px, 7vw, 32px)', marginBottom: '12px' }}>💡</div>
-              <p style={{ color: '#C4B5FD', fontSize: 'clamp(12px, 3.5vw, 14px)', fontStyle: 'italic', lineHeight: '1.5' }}>
+              <div style={{ fontSize: isMobile ? '28px' : '32px', marginBottom: '12px' }}>💡</div>
+              <p style={{ color: '#1E293B', fontSize: isMobile ? '13px' : '14px', fontStyle: 'italic', lineHeight: '1.5' }}>
                 "The only way to learn mathematics is to do mathematics."
               </p>
-              <p style={{ color: '#64748B', fontSize: 'clamp(10px, 3vw, 12px)', marginTop: '12px' }}>— Paul Halmos</p>
+              <p style={{ color: '#64748B', fontSize: '11px', marginTop: '12px' }}>— Paul Halmos</p>
             </div>
 
             {/* Reset Button */}
@@ -541,26 +506,23 @@ export default function Dashboard({ user }) {
               onClick={clearAllData}
               style={{
                 width: '100%',
-                background: 'rgba(30, 41, 59, 0.8)',
-                backdropFilter: 'blur(10px)',
-                color: '#F87171',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: 'clamp(20px, 5vw, 24px)',
-                padding: 'clamp(12px, 3.5vw, 14px)',
-                fontSize: 'clamp(12px, 3.5vw, 14px)',
+                background: 'white',
+                color: '#EF4444',
+                border: '1px solid #FEE2E2',
+                borderRadius: '20px',
+                padding: isMobile ? '12px' : '14px',
+                fontSize: '13px',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
                 fontWeight: '500'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.6)';
-                e.currentTarget.style.color = '#FCA5A5';
+                e.currentTarget.style.background = '#FEF2F2';
+                e.currentTarget.style.borderColor = '#FECACA';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)';
-                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-                e.currentTarget.style.color = '#F87171';
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.borderColor = '#FEE2E2';
               }}
             >
               🗑️ Reset All Progress
@@ -568,23 +530,6 @@ export default function Dashboard({ user }) {
           </div>
         </div>
       </div>
-
-      {/* Animation Keyframes */}
-      <style>
-        {`
-          @keyframes floatOrb {
-            0%, 100% {
-              transform: translate(0, 0) scale(1);
-            }
-            33% {
-              transform: translate(30px, -30px) scale(1.1);
-            }
-            66% {
-              transform: translate(-20px, 20px) scale(0.9);
-            }
-          }
-        `}
-      </style>
     </div>
   )
 }
