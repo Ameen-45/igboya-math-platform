@@ -7,12 +7,33 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import Community from "../pages/Community";
 import Settings from "../pages/Settings";
 
-// Topic imports
-import Algebra from "../pages/topics/algebra/Algebra.jsx";
-import Geometry from "../pages/topics/geometry/Geometry.jsx";
-import Statistics from "../pages/topics/statistics/Statistics.jsx";
-import Calculus from "../pages/topics/calculus/Calculus.jsx";
-import Trigonometry from "../pages/topics/trigonometry/Trigonometry.jsx";
+// Topic main pages
+import Algebra from "../pages/topics/algebra/Algebra";
+import Geometry from "../pages/topics/geometry/Geometry";
+import Statistics from "../pages/topics/statistics/Statistics";
+import Calculus from "../pages/topics/calculus/Calculus";
+import Trigonometry from "../pages/topics/trigonometry/Trigonometry";
+
+// Algebra sub-pages
+import AlgebraIntroduction from "../pages/topics/algebra/Introduction";
+import AlgebraExamples from "../pages/topics/algebra/Examples";
+import AlgebraSolver from "../pages/topics/algebra/EquationSolver";
+import AlgebraQuiz from "../pages/topics/algebra/Quiz";
+import AlgebraPractice from "../pages/topics/algebra/InteractivePractice";
+
+// Statistics sub-pages
+import StatisticsIntroduction from "../pages/topics/statistics/Introduction";
+import StatisticsExamples from "../pages/topics/statistics/Examples";
+import StatisticsDataAnalyzer from "../pages/topics/statistics/DataAnalyzer";
+import StatisticsQuiz from "../pages/topics/statistics/Quiz";
+import StatisticsPractice from "../pages/topics/statistics/InteractivePractice";
+
+// Trigonometry sub-pages
+import TrigonometryIntroduction from "../pages/topics/trigonometry/Introduction";
+import TrigonometryExamples from "../pages/topics/trigonometry/Examples";
+import TrigonometryTriangleSolver from "../pages/topics/trigonometry/TriangleSolver";
+import TrigonometryQuiz from "../pages/topics/trigonometry/Quiz";
+import TrigonometryPractice from "../pages/topics/trigonometry/InteractivePractice";
 
 export default function AppRoutes() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -30,12 +51,33 @@ export default function AppRoutes() {
       <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings user={user} onLogout={() => {}} /></ProtectedRoute>} />
 
-      {/* Topic Routes */}
+      {/* Topic Main Routes */}
       <Route path="/topics/algebra" element={<ProtectedRoute><Algebra /></ProtectedRoute>} />
       <Route path="/topics/geometry" element={<ProtectedRoute><Geometry /></ProtectedRoute>} />
       <Route path="/topics/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
       <Route path="/topics/calculus" element={<ProtectedRoute><Calculus /></ProtectedRoute>} />
       <Route path="/topics/trigonometry" element={<ProtectedRoute><Trigonometry /></ProtectedRoute>} />
+
+      {/* Algebra Sub-pages */}
+      <Route path="/topics/algebra/introduction" element={<ProtectedRoute><AlgebraIntroduction /></ProtectedRoute>} />
+      <Route path="/topics/algebra/examples" element={<ProtectedRoute><AlgebraExamples /></ProtectedRoute>} />
+      <Route path="/topics/algebra/solver" element={<ProtectedRoute><AlgebraSolver /></ProtectedRoute>} />
+      <Route path="/topics/algebra/quiz" element={<ProtectedRoute><AlgebraQuiz /></ProtectedRoute>} />
+      <Route path="/topics/algebra/practice" element={<ProtectedRoute><AlgebraPractice /></ProtectedRoute>} />
+
+      {/* Statistics Sub-pages */}
+      <Route path="/topics/statistics/introduction" element={<ProtectedRoute><StatisticsIntroduction /></ProtectedRoute>} />
+      <Route path="/topics/statistics/examples" element={<ProtectedRoute><StatisticsExamples /></ProtectedRoute>} />
+      <Route path="/topics/statistics/data-analyzer" element={<ProtectedRoute><StatisticsDataAnalyzer /></ProtectedRoute>} />
+      <Route path="/topics/statistics/quiz" element={<ProtectedRoute><StatisticsQuiz /></ProtectedRoute>} />
+      <Route path="/topics/statistics/practice" element={<ProtectedRoute><StatisticsPractice /></ProtectedRoute>} />
+
+      {/* Trigonometry Sub-pages */}
+      <Route path="/topics/trigonometry/introduction" element={<ProtectedRoute><TrigonometryIntroduction /></ProtectedRoute>} />
+      <Route path="/topics/trigonometry/examples" element={<ProtectedRoute><TrigonometryExamples /></ProtectedRoute>} />
+      <Route path="/topics/trigonometry/triangle-solver" element={<ProtectedRoute><TrigonometryTriangleSolver /></ProtectedRoute>} />
+      <Route path="/topics/trigonometry/quiz" element={<ProtectedRoute><TrigonometryQuiz /></ProtectedRoute>} />
+      <Route path="/topics/trigonometry/practice" element={<ProtectedRoute><TrigonometryPractice /></ProtectedRoute>} />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/splash" />} />

@@ -1,13 +1,45 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 
 export default function AlgebraQuiz() {
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [userAnswers, setUserAnswers] = useState({})
   const [showResults, setShowResults] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(1800) // 30 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(1800)
   const [quizStarted, setQuizStarted] = useState(false)
   const [showExplanation, setShowExplanation] = useState(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  const speechSynth = useRef(null)
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const stopSpeech = useCallback(() => {
+    if (speechSynth.current) {
+      window.speechSynthesis.cancel()
+    }
+    setIsPlaying(false)
+  }, [])
+
+  const speakText = useCallback((text) => {
+    stopSpeech()
+    if (!("speechSynthesis" in window)) return
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.rate = 0.85
+    utterance.pitch = 1.05
+    utterance.volume = 1
+    utterance.onstart = () => setIsPlaying(true)
+    utterance.onend = () => setIsPlaying(false)
+    utterance.onerror = () => setIsPlaying(false)
+    speechSynth.current = utterance
+    window.speechSynthesis.speak(utterance)
+  }, [stopSpeech])
 
   const algebraQuestions = [
     {
@@ -21,7 +53,8 @@ export default function AlgebraQuiz() {
 
 Step 2: Divide both sides by 2
 2x/2 = 8/2
-x = 4`
+x = 4`,
+      voiceText: `Solve for x: 2x plus 5 equals 13. Step 1: Subtract 5 from both sides. 2x equals 8. Step 2: Divide both sides by 2. x equals 4.`
     },
     {
       id: 2,
@@ -37,7 +70,8 @@ Step 2: Write the factored form
 
 Step 3: Apply zero product property
 x - 2 = 0 or x - 3 = 0
-x = 2 or x = 3`
+x = 2 or x = 3`,
+      voiceText: `Solve x squared minus 5x plus 6 equals zero. Factor to get x minus 2 times x minus 3 equals zero. Solutions are x equals 2 or x equals 3.`
     },
     {
       id: 3,
@@ -49,7 +83,8 @@ x = 2 or x = 3`
 -2(x - 1) = -2x + 2
 
 Step 2: Combine like terms
-3x + 12 - 2x + 2 = (3x - 2x) + (12 + 2) = x + 14`
+3x + 12 - 2x + 2 = (3x - 2x) + (12 + 2) = x + 14`,
+      voiceText: `Simplify 3 times x plus 4 minus 2 times x minus 1. Distribute to get 3x plus 12 minus 2x plus 2. Combine like terms to get x plus 14.`
     },
     {
       id: 4,
@@ -65,7 +100,8 @@ Step 2: Subtract 3 from both sides
 
 Step 3: Divide both sides by 2
 4/2 = 2x/2
-x = 2`
+x = 2`,
+      voiceText: `If y equals 2x plus 3 and y equals 7, what is x? Substitute 7 for y to get 7 equals 2x plus 3. Subtract 3 from both sides: 4 equals 2x. Divide by 2: x equals 2.`
     },
     {
       id: 5,
@@ -78,390 +114,14 @@ x - 3 = 10
 
 Step 2: Add 3 to both sides
 x - 3 + 3 = 10 + 3
-x = 13`
-    },
-    {
-      id: 6,
-      question: "What is the value of x in 4x - 7 = 3x + 5?",
-      options: ["x = 12", "x = 2", "x = -12", "x = -2"],
-      correctAnswer: 0,
-      explanation: `Step 1: Subtract 3x from both sides
-4x - 7 - 3x = 3x + 5 - 3x
-x - 7 = 5
-
-Step 2: Add 7 to both sides
-x - 7 + 7 = 5 + 7
-x = 12`
-    },
-    {
-      id: 7,
-      question: "Factor completely: x² + 7x + 12",
-      options: ["(x+3)(x+4)", "(x+2)(x+6)", "(x+1)(x+12)", "(x+7)(x+1)"],
-      correctAnswer: 0,
-      explanation: `Step 1: Find two numbers that multiply to 12 and add to 7
-Possible pairs: (1,12), (2,6), (3,4)
-3 + 4 = 7 ✓
-3 × 4 = 12 ✓
-
-Step 2: Write the factored form
-x² + 7x + 12 = (x + 3)(x + 4)`
-    },
-    {
-      id: 8,
-      question: "Solve the system: 2x + y = 7, x - y = 2",
-      options: ["x=3, y=1", "x=2, y=3", "x=4, y=-1", "x=1, y=5"],
-      correctAnswer: 0,
-      explanation: `Step 1: Add the two equations to eliminate y
-(2x + y) + (x - y) = 7 + 2
-3x = 9
-
-Step 2: Solve for x
-3x = 9
-x = 3
-
-Step 3: Substitute x = 3 into second equation
-3 - y = 2
--y = 2 - 3
--y = -1
-y = 1`
-    },
-    {
-      id: 9,
-      question: "What is 3x² × 2x³?",
-      options: ["6x⁵", "5x⁵", "6x⁶", "5x⁶"],
-      correctAnswer: 0,
-      explanation: `Step 1: Multiply the coefficients
-3 × 2 = 6
-
-Step 2: Add the exponents (same base)
-x² × x³ = x²⁺³ = x⁵
-
-Step 3: Combine results
-3x² × 2x³ = 6x⁵`
-    },
-    {
-      id: 10,
-      question: "Solve for x: √(x + 5) = 3",
-      options: ["x = 4", "x = 9", "x = 14", "x = 2"],
-      correctAnswer: 0,
-      explanation: `Step 1: Square both sides to eliminate square root
-[√(x + 5)]² = 3²
-x + 5 = 9
-
-Step 2: Subtract 5 from both sides
-x + 5 - 5 = 9 - 5
-x = 4`
-    },
-    {
-      id: 11,
-      question: "Simplify: (2x² - 3x + 1) + (x² + 4x - 2)",
-      options: ["3x² + x - 1", "3x² + 7x - 1", "x² + x - 1", "2x² + x - 1"],
-      correctAnswer: 0,
-      explanation: `Step 1: Group like terms
-x² terms: 2x² + x² = 3x²
-x terms: -3x + 4x = x
-Constants: 1 + (-2) = -1
-
-Step 2: Combine results
-3x² + x - 1`
-    },
-    {
-      id: 12,
-      question: "If 3x - 2y = 8 and x + y = 4, what is y?",
-      options: ["y = 0.8", "y = 1", "y = 2", "y = 3"],
-      correctAnswer: 0,
-      explanation: `Step 1: Solve second equation for x
-x + y = 4
-x = 4 - y
-
-Step 2: Substitute into first equation
-3(4 - y) - 2y = 8
-12 - 3y - 2y = 8
-12 - 5y = 8
-
-Step 3: Solve for y
--5y = 8 - 12
--5y = -4
-y = 4/5 = 0.8`
-    },
-    {
-      id: 13,
-      question: "What is the solution to |2x - 3| = 7?",
-      options: ["x = 5 or x = -2", "x = 2 or x = -5", "x = 3 or x = -4", "x = 4 or x = -3"],
-      correctAnswer: 0,
-      explanation: `Step 1: Consider both cases for absolute value
-
-Case 1: 2x - 3 = 7
-2x = 7 + 3
-2x = 10
-x = 5
-
-Case 2: 2x - 3 = -7
-2x = -7 + 3
-2x = -4
-x = -2
-
-Step 2: Both solutions are valid
-x = 5 or x = -2`
-    },
-    {
-      id: 14,
-      question: "Expand: (x + 4)²",
-      options: ["x² + 8x + 16", "x² + 4x + 16", "x² + 8x + 8", "x² + 16"],
-      correctAnswer: 0,
-      explanation: `Step 1: Use the formula (a + b)² = a² + 2ab + b²
-Where a = x, b = 4
-
-Step 2: Apply the formula
-(x)² + 2(x)(4) + (4)² = x² + 8x + 16`
-    },
-    {
-      id: 15,
-      question: "Solve: 5(x - 2) = 3(x + 4)",
-      options: ["x = 11", "x = 7", "x = 5", "x = 2"],
-      correctAnswer: 0,
-      explanation: `Step 1: Distribute both sides
-5x - 10 = 3x + 12
-
-Step 2: Subtract 3x from both sides
-5x - 10 - 3x = 3x + 12 - 3x
-2x - 10 = 12
-
-Step 3: Add 10 to both sides
-2x - 10 + 10 = 12 + 10
-2x = 22
-
-Step 4: Divide by 2
-x = 11`
-    },
-    {
-      id: 16,
-      question: "What is the slope of the line 2x + 3y = 6?",
-      options: ["-2/3", "2/3", "-3/2", "3/2"],
-      correctAnswer: 0,
-      explanation: `Step 1: Convert to slope-intercept form (y = mx + b)
-2x + 3y = 6
-
-Step 2: Isolate y
-3y = -2x + 6
-y = (-2/3)x + 2
-
-Step 3: Identify slope (coefficient of x)
-Slope m = -2/3`
-    },
-    {
-      id: 17,
-      question: "Simplify: (4x³y²)/(2xy)",
-      options: ["2x²y", "2x³y", "4x²y", "4x³y"],
-      correctAnswer: 0,
-      explanation: `Step 1: Divide coefficients
-4 ÷ 2 = 2
-
-Step 2: Divide x terms (subtract exponents)
-x³ ÷ x¹ = x³⁻¹ = x²
-
-Step 3: Divide y terms (subtract exponents)
-y² ÷ y¹ = y²⁻¹ = y¹ = y
-
-Step 4: Combine results
-2x²y`
-    },
-    {
-      id: 18,
-      question: "Solve: x² + 4x = 0",
-      options: ["x = 0 or x = -4", "x = 0 or x = 4", "x = 2 or x = -2", "x = 1 or x = -4"],
-      correctAnswer: 0,
-      explanation: `Step 1: Factor out common factor x
-x(x + 4) = 0
-
-Step 2: Apply zero product property
-x = 0 or x + 4 = 0
-x = 0 or x = -4`
-    },
-    {
-      id: 19,
-      question: "What is the y-intercept of y = 3x - 5?",
-      options: ["-5", "5", "3", "-3"],
-      correctAnswer: 0,
-      explanation: `Step 1: Identify slope-intercept form: y = mx + b
-Where m = slope, b = y-intercept
-
-Step 2: Compare with given equation y = 3x - 5
-b = -5
-
-Step 3: y-intercept is the point where x = 0
-When x = 0, y = 3(0) - 5 = -5`
-    },
-    {
-      id: 20,
-      question: "Solve: 2/x = 3/6",
-      options: ["x = 4", "x = 3", "x = 2", "x = 1"],
-      correctAnswer: 0,
-      explanation: `Step 1: Simplify right side
-3/6 = 1/2
-So 2/x = 1/2
-
-Step 2: Cross multiply
-2 × 2 = 1 × x
-4 = x
-
-Step 3: Solution
-x = 4`
-    },
-    {
-      id: 21,
-      question: "Factor: 4x² - 9",
-      options: ["(2x-3)(2x+3)", "(4x-3)(x+3)", "(2x-9)(2x+1)", "(4x-1)(x+9)"],
-      correctAnswer: 0,
-      explanation: `Step 1: Recognize difference of squares pattern
-a² - b² = (a - b)(a + b)
-
-Step 2: Identify a and b
-4x² = (2x)², 9 = 3²
-So a = 2x, b = 3
-
-Step 3: Apply formula
-4x² - 9 = (2x)² - 3² = (2x - 3)(2x + 3)`
-    },
-    {
-      id: 22,
-      question: "Solve: 3(x + 2) - 2(2x - 1) = 4",
-      options: ["x = 4", "x = 2", "x = 0", "x = -2"],
-      correctAnswer: 0,
-      explanation: `Step 1: Distribute
-3(x + 2) = 3x + 6
--2(2x - 1) = -4x + 2
-
-Step 2: Combine
-3x + 6 - 4x + 2 = 4
--x + 8 = 4
-
-Step 3: Solve for x
--x = 4 - 8
--x = -4
-x = 4`
-    },
-    {
-      id: 23,
-      question: "What is the solution to 2x - 1 > 5?",
-      options: ["x > 3", "x < 3", "x > 2", "x < 2"],
-      correctAnswer: 0,
-      explanation: `Step 1: Add 1 to both sides
-2x - 1 + 1 > 5 + 1
-2x > 6
-
-Step 2: Divide both sides by 2
-2x/2 > 6/2
-x > 3`
-    },
-    {
-      id: 24,
-      question: "Simplify: √(16x⁴)",
-      options: ["4x²", "8x²", "4x", "8x"],
-      correctAnswer: 0,
-      explanation: `Step 1: Separate square root
-√(16x⁴) = √16 × √x⁴
-
-Step 2: Simplify each part
-√16 = 4
-√x⁴ = x²  (since (x²)² = x⁴)
-
-Step 3: Combine results
-4 × x² = 4x²`
-    },
-    {
-      id: 25,
-      question: "Solve: (x+1)/3 = (x-2)/2",
-      options: ["x = 8", "x = 4", "x = -4", "x = -8"],
-      correctAnswer: 0,
-      explanation: `Step 1: Cross multiply
-2(x + 1) = 3(x - 2)
-
-Step 2: Distribute
-2x + 2 = 3x - 6
-
-Step 3: Solve for x
-2x - 3x = -6 - 2
--x = -8
-x = 8`
-    },
-    {
-      id: 26,
-      question: "What is the vertex of y = x² - 4x + 3?",
-      options: ["(2, -1)", "(1, 0)", "(4, 3)", "(-2, 15)"],
-      correctAnswer: 0,
-      explanation: `Step 1: Use vertex formula for y = ax² + bx + c
-x-coordinate = -b/(2a)
-a = 1, b = -4
-x = -(-4)/(2×1) = 4/2 = 2
-
-Step 2: Find y-coordinate by substituting x = 2
-y = (2)² - 4(2) + 3 = 4 - 8 + 3 = -1
-
-Step 3: Vertex is (2, -1)`
-    },
-    {
-      id: 27,
-      question: "Solve: 2ˣ = 8",
-      options: ["x = 3", "x = 4", "x = 2", "x = 1"],
-      correctAnswer: 0,
-      explanation: `Step 1: Express both sides with same base
-8 = 2³
-So 2ˣ = 2³
-
-Step 2: Since bases are equal, exponents must be equal
-x = 3`
-    },
-    {
-      id: 28,
-      question: "What is the solution to x² + 6x + 9 = 0?",
-      options: ["x = -3", "x = 3", "x = -6", "x = 0"],
-      correctAnswer: 0,
-      explanation: `Step 1: Recognize perfect square trinomial
-x² + 6x + 9 = (x + 3)²
-
-Step 2: Set equal to zero
-(x + 3)² = 0
-
-Step 3: Solve
-x + 3 = 0
-x = -3`
-    },
-    {
-      id: 29,
-      question: "Simplify: (x² + 3x - 10)/(x - 2)",
-      options: ["x + 5", "x - 5", "x + 2", "x - 2"],
-      correctAnswer: 0,
-      explanation: `Step 1: Factor numerator
-x² + 3x - 10 = (x + 5)(x - 2)
-
-Step 2: Simplify fraction
-(x + 5)(x - 2)/(x - 2) = x + 5
-
-Step 3: Result after cancellation
-x + 5`
-    },
-    {
-      id: 30,
-      question: "Solve: log₂(x) = 3",
-      options: ["x = 8", "x = 6", "x = 9", "x = 4"],
-      correctAnswer: 0,
-      explanation: `Step 1: Convert from logarithmic to exponential form
-log₂(x) = 3 means 2³ = x
-
-Step 2: Calculate
-2³ = 2 × 2 × 2 = 8
-
-Step 3: Solution
-x = 8`
+x = 13`,
+      voiceText: `Solve x minus 3 over 2 equals 5. Multiply both sides by 2: x minus 3 equals 10. Add 3 to both sides: x equals 13.`
     }
   ]
 
-  // Shuffle questions for random order
   const [shuffledQuestions, setShuffledQuestions] = useState([])
 
   useEffect(() => {
-    // Shuffle questions when component mounts
     const shuffled = [...algebraQuestions].sort(() => Math.random() - 0.5)
     setShuffledQuestions(shuffled)
   }, [])
@@ -482,19 +142,27 @@ x = 8`
     return () => clearInterval(timer)
   }, [quizStarted, timeLeft, showResults])
 
+  useEffect(() => {
+    return () => stopSpeech()
+  }, [stopSpeech])
+
   const handleAnswerSelect = (questionIndex, optionIndex) => {
     setUserAnswers(prev => ({
       ...prev,
       [questionIndex]: optionIndex
     }))
+    const question = shuffledQuestions[questionIndex]
+    speakText(`You selected option ${String.fromCharCode(65 + optionIndex)}: ${question.options[optionIndex]}`)
   }
 
   const handleSubmit = () => {
     setShowResults(true)
+    stopSpeech()
+    const score = calculateScore()
+    speakText(`Quiz completed! You scored ${score} out of ${shuffledQuestions.length}. ${getResultMessage()}`)
   }
 
   const handleRetry = () => {
-    // Reshuffle questions and reset state
     const reshuffled = [...algebraQuestions].sort(() => Math.random() - 0.5)
     setShuffledQuestions(reshuffled)
     setUserAnswers({})
@@ -503,6 +171,7 @@ x = 8`
     setTimeLeft(1800)
     setQuizStarted(false)
     setShowExplanation(null)
+    stopSpeech()
   }
 
   const calculateScore = () => {
@@ -525,59 +194,109 @@ x = 8`
   const percentage = Math.round((score / shuffledQuestions.length) * 100)
 
   const getResultMessage = () => {
-    if (percentage >= 90) return "Outstanding! 🎉 You're an algebra genius!"
-    if (percentage >= 80) return "Excellent work! 🌟 You've mastered algebra!"
-    if (percentage >= 70) return "Great job! 💪 You understand algebra well!"
-    if (percentage >= 60) return "Good effort! 👍 Keep practicing!"
-    if (percentage >= 50) return "Not bad! 📚 Review the explanations and try again!"
-    return "Keep practicing! 🔥 Every mistake is a learning opportunity. Try again!"
+    if (percentage >= 90) return "Outstanding! You're an algebra genius!"
+    if (percentage >= 80) return "Excellent work! You've mastered algebra!"
+    if (percentage >= 70) return "Great job! You understand algebra well!"
+    if (percentage >= 60) return "Good effort! Keep practicing!"
+    if (percentage >= 50) return "Not bad! Review the explanations and try again!"
+    return "Keep practicing! Every mistake is a learning opportunity. Try again!"
+  }
+
+  const readQuestion = () => {
+    const q = shuffledQuestions[currentQuestion]
+    speakText(`Question ${currentQuestion + 1}: ${q.question}. Options: A: ${q.options[0]}, B: ${q.options[1]}, C: ${q.options[2]}, D: ${q.options[3]}`)
   }
 
   if (!quizStarted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-8 text-center">
-          <div className="text-6xl mb-6">📝</div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #F1F5F9 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px'
+      }}>
+        <div style={{
+          maxWidth: '600px',
+          width: '100%',
+          background: 'white',
+          borderRadius: '32px',
+          padding: isMobile ? '32px 24px' : '48px',
+          textAlign: 'center',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{
+            width: isMobile ? '80px' : '100px',
+            height: isMobile ? '80px' : '100px',
+            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+            borderRadius: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: isMobile ? '40px' : '50px',
+            margin: '0 auto 24px'
+          }}>
+            📝
+          </div>
+          <h1 style={{ fontSize: isMobile ? '28px' : '36px', fontWeight: '700', color: '#0F172A', marginBottom: '12px' }}>
             Algebra Quiz Challenge
           </h1>
-          <p className="text-gray-600 mb-6 text-lg">
-            Test your algebra knowledge with 30 challenging questions. You have 30 minutes to complete the quiz!
+          <p style={{ fontSize: isMobile ? '14px' : '16px', color: '#64748B', marginBottom: '24px' }}>
+            Test your algebra knowledge with challenging questions. You have 30 minutes to complete the quiz!
           </p>
           
-          <div className="bg-yellow-50 rounded-2xl p-6 mb-6 border border-yellow-200">
-            <h3 className="font-semibold text-yellow-800 mb-3">Quiz Details:</h3>
-            <div className="grid sm:grid-cols-2 gap-4 text-left text-sm">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs">1</div>
-                <span>30 Questions</span>
+          <div style={{
+            background: '#FEF3C7',
+            borderRadius: '20px',
+            padding: '20px',
+            marginBottom: '24px',
+            border: '1px solid #FDE68A'
+          }}>
+            <h3 style={{ fontWeight: '600', color: '#92400E', marginBottom: '12px' }}>Quiz Details:</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '12px', textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', background: '#F59E0B', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white' }}>1</div>
+                <span style={{ fontSize: '13px', color: '#92400E' }}>5 Questions</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs">2</div>
-                <span>30 Minutes</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', background: '#F59E0B', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white' }}>2</div>
+                <span style={{ fontSize: '13px', color: '#92400E' }}>30 Minutes</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs">3</div>
-                <span>Multiple Choice</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', background: '#F59E0B', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white' }}>3</div>
+                <span style={{ fontSize: '13px', color: '#92400E' }}>Multiple Choice</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs">4</div>
-                <span>Step-by-step Solutions</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', background: '#F59E0B', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white' }}>4</div>
+                <span style={{ fontSize: '13px', color: '#92400E' }}>Step-by-step Solutions</span>
               </div>
             </div>
           </div>
 
           <button
-            onClick={() => setQuizStarted(true)}
-            className="bg-gradient-to-r from-purple-500 to-blue-600 text-white px-12 py-4 rounded-2xl hover:from-purple-600 hover:to-blue-700 transition-all font-bold text-lg shadow-2xl transform hover:scale-105"
+            onClick={() => {
+              setQuizStarted(true)
+              speakText("Quiz started! You have 30 minutes. Good luck!")
+            }}
+            style={{
+              width: '100%',
+              padding: '16px',
+              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '20px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              marginBottom: '16px'
+            }}
           >
             Start Quiz Now 🚀
           </button>
 
-          <Link
-            to="/topics/algebra"
-            className="block mt-4 text-purple-600 hover:text-purple-700 font-medium"
-          >
+          <Link to="/topics/algebra" style={{ color: '#6366F1', textDecoration: 'none', fontSize: '14px' }}>
             ← Back to Algebra Topics
           </Link>
         </div>
@@ -587,129 +306,185 @@ x = 8`
 
   if (showResults) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Results Header */}
-          <div className="bg-white rounded-3xl shadow-2xl p-8 mb-6 text-center">
-            <div className={`text-6xl mb-4 ${
-              percentage >= 70 ? 'text-green-500' : 
-              percentage >= 50 ? 'text-yellow-500' : 'text-red-500'
-            }`}>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #F1F5F9 100%)',
+        padding: isMobile ? '16px' : '24px'
+      }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '32px',
+            padding: isMobile ? '24px' : '32px',
+            marginBottom: '24px',
+            textAlign: 'center',
+            border: '1px solid #E2E8F0'
+          }}>
+            <div style={{ fontSize: '60px', marginBottom: '16px' }}>
               {percentage >= 70 ? '🎉' : percentage >= 50 ? '👍' : '💪'}
             </div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">
+            <h2 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '700', color: '#0F172A', marginBottom: '8px' }}>
               Quiz Completed!
             </h2>
-            <p className="text-gray-600 mb-6 text-lg">
+            <p style={{ fontSize: '16px', color: '#64748B', marginBottom: '20px' }}>
               {getResultMessage()}
             </p>
 
-            <div className="bg-gray-50 rounded-2xl p-6 max-w-md mx-auto">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-purple-600 mb-2">
-                  {score}/{shuffledQuestions.length}
-                </div>
-                <div className="text-2xl font-semibold text-gray-700 mb-4">
-                  {percentage}%
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-4">
-                  <div 
-                    className={`h-4 rounded-full transition-all duration-1000 ${
-                      percentage >= 70 ? 'bg-green-500' : 
-                      percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                    }`}
-                    style={{ width: `${percentage}%` }}
-                  ></div>
-                </div>
+            <div style={{
+              background: '#F8FAFC',
+              borderRadius: '20px',
+              padding: '20px',
+              maxWidth: '300px',
+              margin: '0 auto 20px'
+            }}>
+              <div style={{ fontSize: '36px', fontWeight: '700', color: '#6366F1', marginBottom: '4px' }}>
+                {score}/{shuffledQuestions.length}
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: '600', color: '#0F172A', marginBottom: '12px' }}>
+                {percentage}%
+              </div>
+              <div style={{ width: '100%', background: '#E2E8F0', borderRadius: '9999px', height: '8px', overflow: 'hidden' }}>
+                <div style={{
+                  width: `${percentage}%`,
+                  background: percentage >= 70 ? '#10B981' : percentage >= 50 ? '#F59E0B' : '#EF4444',
+                  height: '100%',
+                  borderRadius: '9999px',
+                  transition: 'width 1s'
+                }}></div>
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4 mt-6 max-w-md mx-auto">
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button
                 onClick={handleRetry}
-                className="bg-purple-500 text-white py-3 rounded-xl hover:bg-purple-600 transition-colors font-semibold"
+                style={{
+                  padding: '12px 24px',
+                  background: '#6366F1',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '16px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
               >
                 Try Again 🔄
               </button>
-              <Link
-                to="/topics/algebra"
-                className="bg-gray-500 text-white py-3 rounded-xl hover:bg-gray-600 transition-colors font-semibold text-center"
-              >
+              <Link to="/topics/algebra" style={{
+                padding: '12px 24px',
+                background: '#64748B',
+                color: 'white',
+                borderRadius: '16px',
+                textDecoration: 'none',
+                fontWeight: '600'
+              }}>
                 Back to Topics
               </Link>
             </div>
           </div>
 
           {/* Review Section */}
-          <div className="bg-white rounded-3xl shadow-2xl p-8">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+          <div style={{
+            background: 'white',
+            borderRadius: '32px',
+            padding: isMobile ? '20px' : '28px',
+            border: '1px solid #E2E8F0'
+          }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#0F172A', marginBottom: '20px', textAlign: 'center' }}>
               Review Your Answers
             </h3>
-            <div className="space-y-6">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {shuffledQuestions.map((question, index) => (
-                <div
-                  key={index}
-                  className={`p-6 rounded-2xl border-2 ${
-                    userAnswers[index] === question.correctAnswer
-                      ? 'bg-green-50 border-green-200'
-                      : 'bg-red-50 border-red-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="font-bold text-lg">Question {index + 1}</span>
-                    <span className={`px-3 py-1 rounded-full font-semibold ${
-                      userAnswers[index] === question.correctAnswer
-                        ? 'bg-green-500 text-white'
-                        : 'bg-red-500 text-white'
-                    }`}>
+                <div key={index} style={{
+                  padding: '20px',
+                  borderRadius: '20px',
+                  background: userAnswers[index] === question.correctAnswer ? '#DCFCE7' : '#FEE2E2',
+                  border: `1px solid ${userAnswers[index] === question.correctAnswer ? '#86EFAC' : '#FECACA'}`
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={{ fontWeight: '700', fontSize: '14px' }}>Question {index + 1}</span>
+                    <span style={{
+                      padding: '4px 12px',
+                      borderRadius: '20px',
+                      fontSize: '11px',
+                      fontWeight: '500',
+                      background: userAnswers[index] === question.correctAnswer ? '#10B981' : '#EF4444',
+                      color: 'white'
+                    }}>
                       {userAnswers[index] === question.correctAnswer ? 'Correct' : 'Incorrect'}
                     </span>
                   </div>
                   
-                  <p className="text-lg font-medium text-gray-800 mb-4">
+                  <p style={{ fontSize: '16px', fontWeight: '500', color: '#0F172A', marginBottom: '16px' }}>
                     {question.question}
                   </p>
 
-                  <div className="mb-4">
-                    <p className="font-semibold text-gray-700 mb-2">Your answer:</p>
-                    <div className={`p-3 rounded-lg ${
-                      userAnswers[index] === question.correctAnswer
-                        ? 'bg-green-100 border border-green-300'
-                        : 'bg-red-100 border border-red-300'
-                    }`}>
-                      {userAnswers[index] !== undefined ? (
-                        <span className="font-medium">
-                          {question.options[userAnswers[index]]}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">Not answered</span>
-                      )}
+                  <div style={{ marginBottom: '16px' }}>
+                    <p style={{ fontWeight: '600', color: '#475569', marginBottom: '8px', fontSize: '13px' }}>Your answer:</p>
+                    <div style={{
+                      padding: '12px',
+                      borderRadius: '12px',
+                      background: userAnswers[index] === question.correctAnswer ? '#D1FAE5' : '#FEE2E2',
+                      border: `1px solid ${userAnswers[index] === question.correctAnswer ? '#10B981' : '#EF4444'}`
+                    }}>
+                      {userAnswers[index] !== undefined ? question.options[userAnswers[index]] : 'Not answered'}
                     </div>
                   </div>
 
                   {userAnswers[index] !== question.correctAnswer && (
-                    <div className="mb-4">
-                      <p className="font-semibold text-green-700 mb-2">Correct answer:</p>
-                      <div className="p-3 bg-green-100 rounded-lg border border-green-300">
-                        <span className="font-medium">
-                          {question.options[question.correctAnswer]}
-                        </span>
+                    <div style={{ marginBottom: '16px' }}>
+                      <p style={{ fontWeight: '600', color: '#10B981', marginBottom: '8px', fontSize: '13px' }}>Correct answer:</p>
+                      <div style={{
+                        padding: '12px',
+                        borderRadius: '12px',
+                        background: '#D1FAE5',
+                        border: '1px solid #10B981'
+                      }}>
+                        {question.options[question.correctAnswer]}
                       </div>
                     </div>
                   )}
 
                   <div>
                     <button
-                      onClick={() => setShowExplanation(showExplanation === index ? null : index)}
-                      className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold mb-3"
+                      onClick={() => {
+                        if (showExplanation === index) {
+                          setShowExplanation(null)
+                          stopSpeech()
+                        } else {
+                          setShowExplanation(index)
+                          speakText(question.explanation)
+                        }
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        background: '#3B82F6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        marginBottom: '12px'
+                      }}
                     >
                       {showExplanation === index ? 'Hide Solution' : 'Show Step-by-Step Solution'}
                     </button>
                     
                     {showExplanation === index && (
-                      <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
-                        <h4 className="font-bold text-yellow-800 mb-3 text-lg">Step-by-Step Solution:</h4>
-                        <pre className="text-yellow-800 whitespace-pre-wrap font-sans text-sm leading-relaxed">
+                      <div style={{
+                        background: '#FEF3C7',
+                        borderRadius: '16px',
+                        padding: '16px',
+                        border: '1px solid #FDE68A'
+                      }}>
+                        <h4 style={{ fontWeight: '700', color: '#92400E', marginBottom: '12px' }}>Step-by-Step Solution:</h4>
+                        <pre style={{
+                          margin: 0,
+                          fontSize: '13px',
+                          color: '#92400E',
+                          whiteSpace: 'pre-wrap',
+                          fontFamily: 'inherit',
+                          lineHeight: '1.6'
+                        }}>
                           {question.explanation}
                         </pre>
                       </div>
@@ -724,27 +499,69 @@ x = 8`
     )
   }
 
+  const currentQ = shuffledQuestions[currentQuestion]
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4">
-      <div className="max-w-4xl mx-auto">
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #F1F5F9 100%)',
+      padding: isMobile ? '16px' : '20px'
+    }}>
+      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
         
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 mb-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
+        <div style={{
+          background: 'white',
+          borderRadius: '20px',
+          padding: '16px',
+          marginBottom: '20px',
+          border: '1px solid #E2E8F0'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">Algebra Quiz</h1>
-              <p className="text-gray-600 text-sm">
+              <h1 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A' }}>Algebra Quiz</h1>
+              <p style={{ fontSize: '13px', color: '#64748B' }}>
                 Question {currentQuestion + 1} of {shuffledQuestions.length}
               </p>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="bg-red-100 text-red-600 px-3 py-1 rounded-full font-semibold">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                background: '#FEE2E2',
+                padding: '6px 12px',
+                borderRadius: '20px',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: '#DC2626'
+              }}>
                 ⏱️ {formatTime(timeLeft)}
               </div>
               <button
+                onClick={readQuestion}
+                style={{
+                  padding: '6px 12px',
+                  background: '#E0E7FF',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  color: '#4338CA'
+                }}
+              >
+                🔊 Read Question
+              </button>
+              <button
                 onClick={handleSubmit}
-                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-semibold"
+                style={{
+                  padding: '8px 16px',
+                  background: '#10B981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '13px'
+                }}
               >
                 Submit Quiz
               </button>
@@ -752,116 +569,155 @@ x = 8`
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-            <div 
-              className="bg-purple-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${((currentQuestion + 1) / shuffledQuestions.length) * 100}%` }}
-            ></div>
+          <div style={{ width: '100%', background: '#E2E8F0', borderRadius: '9999px', height: '6px', marginTop: '12px' }}>
+            <div style={{
+              width: `${((currentQuestion + 1) / shuffledQuestions.length) * 100}%`,
+              background: 'linear-gradient(90deg, #6366F1, #8B5CF6)',
+              height: '100%',
+              borderRadius: '9999px',
+              transition: 'width 0.3s'
+            }}></div>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-4 gap-6">
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '20px' }}>
           
           {/* Question Section */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              {shuffledQuestions.length > 0 && (
-                <>
-                  <h2 className="text-xl font-bold text-gray-800 mb-6">
-                    {shuffledQuestions[currentQuestion].question}
-                  </h2>
+          <div style={{ flex: 3 }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '24px',
+              padding: isMobile ? '20px' : '28px',
+              border: '1px solid #E2E8F0'
+            }}>
+              <h2 style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: '#0F172A', marginBottom: '24px' }}>
+                {currentQ?.question}
+              </h2>
 
-                  <div className="space-y-3">
-                    {shuffledQuestions[currentQuestion].options.map((option, optionIndex) => (
-                      <button
-                        key={optionIndex}
-                        onClick={() => handleAnswerSelect(currentQuestion, optionIndex)}
-                        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                          userAnswers[currentQuestion] === optionIndex
-                            ? 'border-purple-500 bg-purple-50 text-purple-700'
-                            : 'border-gray-200 hover:border-purple-300 hover:bg-purple-25'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${
-                            userAnswers[currentQuestion] === optionIndex
-                              ? 'bg-purple-500 text-white'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {String.fromCharCode(65 + optionIndex)}
-                          </div>
-                          <span className="font-medium">{option}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {currentQ?.options.map((option, optionIndex) => (
+                  <button
+                    key={optionIndex}
+                    onClick={() => handleAnswerSelect(currentQuestion, optionIndex)}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '16px',
+                      borderRadius: '16px',
+                      border: `2px solid ${userAnswers[currentQuestion] === optionIndex ? '#6366F1' : '#E2E8F0'}`,
+                      background: userAnswers[currentQuestion] === optionIndex ? '#EEF2FF' : 'white',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: '600',
+                        background: userAnswers[currentQuestion] === optionIndex ? '#6366F1' : '#F1F5F9',
+                        color: userAnswers[currentQuestion] === optionIndex ? 'white' : '#64748B'
+                      }}>
+                        {String.fromCharCode(65 + optionIndex)}
+                      </div>
+                      <span style={{ fontSize: '15px', color: '#0F172A' }}>{option}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Navigation */}
-            <div className="flex justify-between mt-4">
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px', gap: '12px' }}>
               <button
                 onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
                 disabled={currentQuestion === 0}
-                className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all ${
-                  currentQuestion === 0
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-500 text-white hover:bg-gray-600'
-                }`}
+                style={{
+                  padding: '12px 20px',
+                  background: currentQuestion === 0 ? '#F1F5F9' : 'white',
+                  color: currentQuestion === 0 ? '#94A3B8' : '#64748B',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '14px',
+                  cursor: currentQuestion === 0 ? 'not-allowed' : 'pointer',
+                  fontWeight: '500'
+                }}
               >
-                <span>←</span>
-                <span>Previous</span>
+                ← Previous
               </button>
 
               <button
                 onClick={() => setCurrentQuestion(prev => Math.min(shuffledQuestions.length - 1, prev + 1))}
                 disabled={currentQuestion === shuffledQuestions.length - 1}
-                className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all ${
-                  currentQuestion === shuffledQuestions.length - 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-purple-500 text-white hover:bg-purple-600'
-                }`}
+                style={{
+                  padding: '12px 20px',
+                  background: currentQuestion === shuffledQuestions.length - 1 ? '#F1F5F9' : 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                  color: currentQuestion === shuffledQuestions.length - 1 ? '#94A3B8' : 'white',
+                  border: 'none',
+                  borderRadius: '14px',
+                  cursor: currentQuestion === shuffledQuestions.length - 1 ? 'not-allowed' : 'pointer',
+                  fontWeight: '500'
+                }}
               >
-                <span>Next</span>
-                <span>→</span>
+                Next →
               </button>
             </div>
           </div>
 
           {/* Question Navigator */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg p-4 sticky top-4">
-              <h3 className="font-semibold text-gray-800 mb-3">Questions</h3>
-              <div className="grid grid-cols-5 gap-2">
+          <div style={{ flex: 1 }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '20px',
+              padding: '16px',
+              border: '1px solid #E2E8F0',
+              position: 'sticky',
+              top: '20px'
+            }}>
+              <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#0F172A', marginBottom: '12px' }}>Questions</h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(5, 1fr)',
+                gap: '8px'
+              }}>
                 {shuffledQuestions.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentQuestion(index)}
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${
-                      currentQuestion === index
-                        ? 'bg-purple-500 text-white shadow-md'
-                        : userAnswers[index] !== undefined
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      background: currentQuestion === index ? '#6366F1' : userAnswers[index] !== undefined ? '#10B981' : '#F1F5F9',
+                      color: currentQuestion === index || userAnswers[index] !== undefined ? 'white' : '#64748B',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
                   >
                     {index + 1}
                   </button>
                 ))}
               </div>
               
-              <div className="mt-4 space-y-2 text-xs">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-purple-500 rounded"></div>
+              <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                  <div style={{ width: '12px', height: '12px', background: '#6366F1', borderRadius: '3px' }}></div>
                   <span>Current</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-green-500 rounded"></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                  <div style={{ width: '12px', height: '12px', background: '#10B981', borderRadius: '3px' }}></div>
                   <span>Answered</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-gray-100 rounded"></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                  <div style={{ width: '12px', height: '12px', background: '#F1F5F9', borderRadius: '3px', border: '1px solid #E2E8F0' }}></div>
                   <span>Unanswered</span>
                 </div>
               </div>
