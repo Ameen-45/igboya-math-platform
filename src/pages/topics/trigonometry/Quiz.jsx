@@ -1,13 +1,45 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 
 export default function TrigonometryQuiz() {
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [userAnswers, setUserAnswers] = useState({})
   const [showResults, setShowResults] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(1800) // 30 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(1800)
   const [quizStarted, setQuizStarted] = useState(false)
   const [showExplanation, setShowExplanation] = useState(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  const speechSynth = useRef(null)
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const stopSpeech = useCallback(() => {
+    if (speechSynth.current) {
+      window.speechSynthesis.cancel()
+    }
+    setIsPlaying(false)
+  }, [])
+
+  const speakText = useCallback((text) => {
+    stopSpeech()
+    if (!("speechSynthesis" in window)) return
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.rate = 0.85
+    utterance.pitch = 1.05
+    utterance.volume = 1
+    utterance.onstart = () => setIsPlaying(true)
+    utterance.onend = () => setIsPlaying(false)
+    utterance.onerror = () => setIsPlaying(false)
+    speechSynth.current = utterance
+    window.speechSynthesis.speak(utterance)
+  }, [stopSpeech])
 
   const trigonometryQuestions = [
     {
@@ -15,439 +47,62 @@ export default function TrigonometryQuiz() {
       question: "In a right triangle, if the opposite side is 3 and the hypotenuse is 5, what is sin(θ)?",
       options: ["3/5", "4/5", "5/3", "3/4"],
       correctAnswer: 0,
-      explanation: `Step 1: Recall the definition of sine
-sin(θ) = Opposite / Hypotenuse
-
-Step 2: Substitute the given values
-Opposite = 3, Hypotenuse = 5
-sin(θ) = 3/5
-
-Step 3: The sine ratio is 3/5`
+      explanation: "sin(θ) = opposite/hypotenuse = 3/5 = 0.6",
+      voiceText: "In a right triangle, opposite side is 3, hypotenuse is 5. What is sine of theta?"
     },
     {
       id: 2,
       question: "What is cos(60°)?",
       options: ["1/2", "√3/2", "√2/2", "1"],
       correctAnswer: 0,
-      explanation: `Step 1: Recall the exact value for cos(60°)
-From the unit circle or special triangles:
-cos(60°) = 1/2
-
-Step 2: This is a standard trigonometric value
-In a 30-60-90 triangle, adjacent/hypotenuse = 1/2`
+      explanation: "cos(60°) = 1/2 = 0.5. This is a standard trigonometric value.",
+      voiceText: "What is cosine of 60 degrees?"
     },
     {
       id: 3,
       question: "If tan(θ) = 1, what is the value of θ in degrees?",
       options: ["45°", "30°", "60°", "90°"],
       correctAnswer: 0,
-      explanation: `Step 1: Recall when tangent equals 1
-tan(θ) = Opposite/Adjacent = 1
-This happens when opposite = adjacent
-
-Step 2: This occurs in an isosceles right triangle
-In a 45-45-90 triangle, both acute angles are 45°
-Therefore θ = 45°`
+      explanation: "tan(θ) = 1 when θ = 45° because in a 45-45-90 triangle, opposite = adjacent.",
+      voiceText: "If tangent theta equals 1, what is theta in degrees?"
     },
     {
       id: 4,
       question: "What is the value of sin(90°)?",
       options: ["1", "0", "√3/2", "1/2"],
       correctAnswer: 0,
-      explanation: `Step 1: Understand the unit circle definition
-At 90°, the point on the unit circle is (0,1)
-
-Step 2: Sine is the y-coordinate
-sin(90°) = y-coordinate = 1
-
-Step 3: This represents the maximum value of sine`
+      explanation: "sin(90°) = 1. At 90°, the point on unit circle is (0,1).",
+      voiceText: "What is sine of 90 degrees?"
     },
     {
       id: 5,
-      question: "In triangle ABC, angle A = 40°, angle B = 60°, side a = 8. Find side b using sine rule.",
-      options: ["10.78", "9.45", "11.23", "12.15"],
+      question: "What is the amplitude of y = 3cos(x) + 2?",
+      options: ["3", "2", "5", "1"],
       correctAnswer: 0,
-      explanation: `Step 1: Apply sine rule formula
-a/sinA = b/sinB
-
-Step 2: Substitute known values
-8/sin(40°) = b/sin(60°)
-
-Step 3: Solve for b
-b = (8 × sin(60°)) / sin(40°)
-b = (8 × 0.8660) / 0.6428
-b ≈ 6.928 / 0.6428 ≈ 10.78`
+      explanation: "Amplitude = |3| = 3. The +2 only affects vertical shift.",
+      voiceText: "What is the amplitude of y equals 3 cosine x plus 2?"
     },
     {
       id: 6,
       question: "What is the period of y = sin(2x)?",
       options: ["π", "2π", "π/2", "4π"],
       correctAnswer: 0,
-      explanation: `Step 1: Recall period formula for sine
-For y = sin(Bx), period = 2π/B
-
-Step 2: Apply the formula
-B = 2
-Period = 2π/2 = π
-
-Step 3: The function completes one full cycle every π radians`
+      explanation: "Period = 2π/|B| = 2π/2 = π",
+      voiceText: "What is the period of y equals sine of 2x?"
     },
     {
       id: 7,
       question: "If cos(θ) = 0.6 and θ is acute, what is sin(θ)?",
       options: ["0.8", "0.4", "0.6", "1.0"],
       correctAnswer: 0,
-      explanation: `Step 1: Use Pythagorean identity
-sin²(θ) + cos²(θ) = 1
-
-Step 2: Substitute cos(θ) = 0.6
-sin²(θ) + (0.6)² = 1
-sin²(θ) + 0.36 = 1
-
-Step 3: Solve for sin(θ)
-sin²(θ) = 1 - 0.36 = 0.64
-sin(θ) = √0.64 = 0.8 (positive since θ is acute)`
-    },
-    {
-      id: 8,
-      question: "What is the amplitude of y = 3cos(x) + 2?",
-      options: ["3", "2", "5", "1"],
-      correctAnswer: 0,
-      explanation: `Step 1: Understand amplitude definition
-Amplitude is the coefficient of the trigonometric function
-For y = A·cos(Bx) + C, amplitude = |A|
-
-Step 2: Identify A from the equation
-y = 3cos(x) + 2
-A = 3
-
-Step 3: Amplitude = |3| = 3
-The +2 only affects vertical shift, not amplitude`
-    },
-    {
-      id: 9,
-      question: "Convert 150° to radians.",
-      options: ["5π/6", "2π/3", "3π/4", "π/2"],
-      correctAnswer: 0,
-      explanation: `Step 1: Use conversion formula
-Radians = Degrees × π/180
-
-Step 2: Apply conversion
-150° × π/180 = 150π/180
-
-Step 3: Simplify the fraction
-150π/180 = 15π/18 = 5π/6`
-    },
-    {
-      id: 10,
-      question: "What is sec(45°)?",
-      options: ["√2", "2", "1", "√2/2"],
-      correctAnswer: 0,
-      explanation: `Step 1: Recall secant definition
-sec(θ) = 1/cos(θ)
-
-Step 2: Find cos(45°)
-cos(45°) = √2/2
-
-Step 3: Calculate sec(45°)
-sec(45°) = 1/(√2/2) = 2/√2 = √2`
-    },
-    {
-      id: 11,
-      question: "In which quadrant is sin positive and cos negative?",
-      options: ["Second", "First", "Third", "Fourth"],
-      correctAnswer: 0,
-      explanation: `Step 1: Recall the ASTC rule
-A - All positive in first quadrant
-S - Sine positive in second quadrant
-T - Tangent positive in third quadrant
-C - Cosine positive in fourth quadrant
-
-Step 2: Identify the quadrant
-sin positive and cos negative occurs in second quadrant`
-    },
-    {
-      id: 12,
-      question: "What is tan(π/4)?",
-      options: ["1", "√3", "1/√3", "0"],
-      correctAnswer: 0,
-      explanation: `Step 1: Convert radians to degrees
-π/4 = 45°
-
-Step 2: Recall tan(45°)
-tan(45°) = Opposite/Adjacent = 1
-
-Step 3: In a 45-45-90 triangle, both legs are equal
-Therefore tan(45°) = 1`
-    },
-    {
-      id: 13,
-      question: "Find the area of a triangle with sides 7, 8, and 9 using Heron's formula.",
-      options: ["26.83", "24.00", "28.00", "30.00"],
-      correctAnswer: 0,
-      explanation: `Step 1: Calculate semi-perimeter
-s = (7 + 8 + 9)/2 = 24/2 = 12
-
-Step 2: Apply Heron's formula
-Area = √[s(s-a)(s-b)(s-c)]
-Area = √[12(12-7)(12-8)(12-9)]
-Area = √[12×5×4×3]
-
-Step 3: Calculate
-Area = √[720] ≈ 26.83`
-    },
-    {
-      id: 14,
-      question: "What is sin(180° - θ) equal to?",
-      options: ["sin(θ)", "-sin(θ)", "cos(θ)", "-cos(θ)"],
-      correctAnswer: 0,
-      explanation: `Step 1: Use trigonometric identity
-sin(180° - θ) = sin(θ)
-
-Step 2: Understand the reasoning
-This is a supplementary angle identity
-In the unit circle, sin(180° - θ) has the same y-coordinate as sin(θ)`
-    },
-    {
-      id: 15,
-      question: "If a ladder 10m long leans against a wall making 60° with ground, how high up the wall does it reach?",
-      options: ["8.66m", "5m", "10m", "7.07m"],
-      correctAnswer: 0,
-      explanation: `Step 1: Set up the right triangle
-Hypotenuse (ladder) = 10m
-Angle with ground = 60°
-Height = Opposite side
-
-Step 2: Use sine ratio
-sin(60°) = Opposite/Hypotenuse
-√3/2 = Height/10
-
-Step 3: Solve for height
-Height = 10 × √3/2 = 5√3 ≈ 8.66m`
-    },
-    {
-      id: 16,
-      question: "What is the phase shift of y = sin(x - π/4)?",
-      options: ["π/4 to the right", "π/4 to the left", "π/2 to the right", "No phase shift"],
-      correctAnswer: 0,
-      explanation: `Step 1: Understand phase shift formula
-For y = sin(x - C), phase shift = C to the right
-
-Step 2: Identify C from the equation
-y = sin(x - π/4)
-C = π/4
-
-Step 3: Phase shift is π/4 to the right`
-    },
-    {
-      id: 17,
-      question: "Find cos(120°) using reference angles.",
-      options: ["-1/2", "1/2", "-√3/2", "√3/2"],
-      correctAnswer: 0,
-      explanation: `Step 1: Identify quadrant and reference angle
-120° is in second quadrant
-Reference angle = 180° - 120° = 60°
-
-Step 2: Determine sign in second quadrant
-In second quadrant, cosine is negative
-
-Step 3: Apply reference angle
-cos(120°) = -cos(60°) = -1/2`
-    },
-    {
-      id: 18,
-      question: "What is the value of sin²(θ) + cos²(θ)?",
-      options: ["1", "0", "2", "sin(2θ)"],
-      correctAnswer: 0,
-      explanation: `Step 1: Recall the fundamental Pythagorean identity
-sin²(θ) + cos²(θ) = 1
-
-Step 2: This identity is true for all values of θ
-It comes from the unit circle definition
-x² + y² = 1 where x = cos(θ), y = sin(θ)`
-    },
-    {
-      id: 19,
-      question: "In triangle ABC, sides b=5, c=7, angle A=40°. Find side a using cosine rule.",
-      options: ["4.52", "5.23", "6.15", "3.89"],
-      correctAnswer: 0,
-      explanation: `Step 1: Apply cosine rule
-a² = b² + c² - 2bc·cosA
-
-Step 2: Substitute values
-a² = 5² + 7² - 2×5×7×cos(40°)
-a² = 25 + 49 - 70×0.7660
-
-Step 3: Calculate
-a² = 74 - 53.62 = 20.38
-a = √20.38 ≈ 4.52`
-    },
-    {
-      id: 20,
-      question: "What is cot(45°)?",
-      options: ["1", "√3", "1/√3", "0"],
-      correctAnswer: 0,
-      explanation: `Step 1: Recall cotangent definition
-cot(θ) = 1/tan(θ) = cos(θ)/sin(θ)
-
-Step 2: Find tan(45°)
-tan(45°) = 1
-
-Step 3: Calculate cot(45°)
-cot(45°) = 1/tan(45°) = 1/1 = 1`
-    },
-    {
-      id: 21,
-      question: "If sin(θ) = 0.8 and θ is in first quadrant, what is cos(θ)?",
-      options: ["0.6", "0.4", "0.8", "1.0"],
-      correctAnswer: 0,
-      explanation: `Step 1: Use Pythagorean identity
-sin²(θ) + cos²(θ) = 1
-
-Step 2: Substitute sin(θ) = 0.8
-(0.8)² + cos²(θ) = 1
-0.64 + cos²(θ) = 1
-
-Step 3: Solve for cos(θ)
-cos²(θ) = 1 - 0.64 = 0.36
-cos(θ) = √0.36 = 0.6 (positive in first quadrant)`
-    },
-    {
-      id: 22,
-      question: "What is the range of y = 2sin(x) + 1?",
-      options: ["[-1, 3]", "[0, 2]", "[-2, 2]", "[1, 3]"],
-      correctAnswer: 0,
-      explanation: `Step 1: Find range of basic sine function
-sin(x) ranges from -1 to 1
-
-Step 2: Apply transformations
-2sin(x) ranges from -2 to 1
-2sin(x) + 1 ranges from -2+1 to 2+1 = -1 to 3
-
-Step 3: Range is [-1, 3]`
-    },
-    {
-      id: 23,
-      question: "Convert 3π/2 radians to degrees.",
-      options: ["270°", "180°", "90°", "360°"],
-      correctAnswer: 0,
-      explanation: `Step 1: Use conversion formula
-Degrees = Radians × 180/π
-
-Step 2: Apply conversion
-3π/2 × 180/π = (3/2) × 180
-
-Step 3: Calculate
-(3/2) × 180 = 3 × 90 = 270°`
-    },
-    {
-      id: 24,
-      question: "What is csc(30°)?",
-      options: ["2", "√3", "2/√3", "1"],
-      correctAnswer: 0,
-      explanation: `Step 1: Recall cosecant definition
-csc(θ) = 1/sin(θ)
-
-Step 2: Find sin(30°)
-sin(30°) = 1/2
-
-Step 3: Calculate csc(30°)
-csc(30°) = 1/(1/2) = 2`
-    },
-    {
-      id: 25,
-      question: "In a right triangle, if tan(θ) = 3/4, what is sin(θ)?",
-      options: ["3/5", "4/5", "3/4", "5/3"],
-      correctAnswer: 0,
-      explanation: `Step 1: Set up the triangle
-tan(θ) = Opposite/Adjacent = 3/4
-So Opposite = 3, Adjacent = 4
-
-Step 2: Find hypotenuse using Pythagorean theorem
-Hypotenuse = √(3² + 4²) = √(9 + 16) = √25 = 5
-
-Step 3: Calculate sin(θ)
-sin(θ) = Opposite/Hypotenuse = 3/5`
-    },
-    {
-      id: 26,
-      question: "What is the value of sin(π/6)?",
-      options: ["1/2", "√3/2", "√2/2", "1"],
-      correctAnswer: 0,
-      explanation: `Step 1: Convert radians to degrees
-π/6 = 30°
-
-Step 2: Recall exact value
-sin(30°) = 1/2
-
-Step 3: This is a standard trigonometric value
-In a 30-60-90 triangle, opposite/hypotenuse = 1/2`
-    },
-    {
-      id: 27,
-      question: "If cos(θ) = -0.5 and θ is in second quadrant, what is tan(θ)?",
-      options: ["-√3", "√3", "-1/√3", "1/√3"],
-      correctAnswer: 0,
-      explanation: `Step 1: Find sin(θ) using identity
-sin²(θ) = 1 - cos²(θ) = 1 - (-0.5)² = 1 - 0.25 = 0.75
-sin(θ) = √0.75 = √3/2 (positive in second quadrant)
-
-Step 2: Calculate tan(θ)
-tan(θ) = sin(θ)/cos(θ) = (√3/2)/(-0.5) = -√3`
-    },
-    {
-      id: 28,
-      question: "What is the amplitude of y = -4sin(x)?",
-      options: ["4", "-4", "2", "1"],
-      correctAnswer: 0,
-      explanation: `Step 1: Understand amplitude definition
-Amplitude is always positive
-It's the absolute value of the coefficient
-
-Step 2: Identify the coefficient
-y = -4sin(x)
-Coefficient = -4
-
-Step 3: Amplitude = |-4| = 4
-The negative sign only affects phase, not amplitude`
-    },
-    {
-      id: 29,
-      question: "Find the exact value of sin(75°) using sum formula.",
-      options: ["(√6 + √2)/4", "(√6 - √2)/4", "(√3 + 1)/2", "(√3 - 1)/2"],
-      correctAnswer: 0,
-      explanation: `Step 1: Use angle sum identity
-sin(75°) = sin(45° + 30°)
-= sin(45°)cos(30°) + cos(45°)sin(30°)
-
-Step 2: Substitute exact values
-= (√2/2)(√3/2) + (√2/2)(1/2)
-= (√6/4) + (√2/4)
-
-Step 3: Combine terms
-= (√6 + √2)/4`
-    },
-    {
-      id: 30,
-      question: "What is the domain of y = tan(x)?",
-      options: ["All real numbers except π/2 + kπ", "All real numbers", "[-1,1]", "[0,∞)"],
-      correctAnswer: 0,
-      explanation: `Step 1: Understand tangent definition
-tan(x) = sin(x)/cos(x)
-
-Step 2: Identify restrictions
-tan(x) is undefined when cos(x) = 0
-cos(x) = 0 at x = π/2 + kπ where k is an integer
-
-Step 3: Domain is all real numbers except these points`
+      explanation: "sin²θ + cos²θ = 1, so sin²θ = 1 - 0.36 = 0.64, sinθ = 0.8",
+      voiceText: "If cosine theta equals 0.6 and theta is acute, what is sine theta?"
     }
   ]
 
-  // Shuffle questions for random order
   const [shuffledQuestions, setShuffledQuestions] = useState([])
 
   useEffect(() => {
-    // Shuffle questions when component mounts
     const shuffled = [...trigonometryQuestions].sort(() => Math.random() - 0.5)
     setShuffledQuestions(shuffled)
   }, [])
@@ -468,19 +123,27 @@ Step 3: Domain is all real numbers except these points`
     return () => clearInterval(timer)
   }, [quizStarted, timeLeft, showResults])
 
+  useEffect(() => {
+    return () => stopSpeech()
+  }, [stopSpeech])
+
   const handleAnswerSelect = (questionIndex, optionIndex) => {
     setUserAnswers(prev => ({
       ...prev,
       [questionIndex]: optionIndex
     }))
+    const question = shuffledQuestions[questionIndex]
+    speakText(`You selected option ${String.fromCharCode(65 + optionIndex)}: ${question.options[optionIndex]}`)
   }
 
   const handleSubmit = () => {
     setShowResults(true)
+    stopSpeech()
+    const score = calculateScore()
+    speakText(`Quiz completed! You scored ${score} out of ${shuffledQuestions.length}. ${getResultMessage()}`)
   }
 
   const handleRetry = () => {
-    // Reshuffle questions and reset state
     const reshuffled = [...trigonometryQuestions].sort(() => Math.random() - 0.5)
     setShuffledQuestions(reshuffled)
     setUserAnswers({})
@@ -489,6 +152,7 @@ Step 3: Domain is all real numbers except these points`
     setTimeLeft(1800)
     setQuizStarted(false)
     setShowExplanation(null)
+    stopSpeech()
   }
 
   const calculateScore = () => {
@@ -511,51 +175,102 @@ Step 3: Domain is all real numbers except these points`
   const percentage = Math.round((score / shuffledQuestions.length) * 100)
 
   const getResultMessage = () => {
-    if (percentage >= 90) return "Outstanding! 🎉 You're a trigonometry master!"
-    if (percentage >= 80) return "Excellent work! 🌟 You've mastered trigonometric concepts!"
-    if (percentage >= 70) return "Great job! 💪 You understand trigonometry well!"
-    if (percentage >= 60) return "Good effort! 👍 Keep practicing trigonometric ratios!"
-    if (percentage >= 50) return "Not bad! 📚 Review the explanations and try again!"
-    return "Keep practicing! 🔥 Every triangle you solve makes you better. Try again!"
+    if (percentage >= 90) return "Outstanding! You're a trigonometry master!"
+    if (percentage >= 80) return "Excellent work! You've mastered trigonometric concepts!"
+    if (percentage >= 70) return "Great job! You understand trigonometry well!"
+    if (percentage >= 60) return "Good effort! Keep practicing trigonometric ratios!"
+    if (percentage >= 50) return "Not bad! Review the explanations and try again!"
+    return "Keep practicing! Every triangle you solve makes you better. Try again!"
+  }
+
+  const getResultColor = () => {
+    if (percentage >= 70) return '#10B981'
+    if (percentage >= 50) return '#F59E0B'
+    return '#EF4444'
+  }
+
+  const readQuestion = () => {
+    const q = shuffledQuestions[currentQuestion]
+    speakText(`Question ${currentQuestion + 1}: ${q.question}. Options: A: ${q.options[0]}, B: ${q.options[1]}, C: ${q.options[2]}, D: ${q.options[3]}`)
   }
 
   if (!quizStarted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-8 text-center">
-          <div className="text-6xl mb-6">📐</div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #F1F5F9 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px'
+      }}>
+        <div style={{
+          maxWidth: '600px',
+          width: '100%',
+          background: 'white',
+          borderRadius: '32px',
+          padding: isMobile ? '32px 24px' : '48px',
+          textAlign: 'center',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{
+            width: isMobile ? '80px' : '100px',
+            height: isMobile ? '80px' : '100px',
+            background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+            borderRadius: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: isMobile ? '40px' : '50px',
+            margin: '0 auto 24px'
+          }}>
+            📐
+          </div>
+          <h1 style={{ fontSize: isMobile ? '28px' : '36px', fontWeight: '700', color: '#0F172A', marginBottom: '12px' }}>
             Trigonometry Quiz Challenge
           </h1>
-          <p className="text-gray-600 mb-6 text-lg">
-            Test your trigonometry knowledge with 30 challenging questions. You have 30 minutes to complete the quiz!
+          <p style={{ fontSize: isMobile ? '14px' : '16px', color: '#64748B', marginBottom: '24px' }}>
+            Test your trigonometry knowledge with challenging questions. You have 30 minutes to complete the quiz!
           </p>
           
-          <div className="bg-yellow-50 rounded-2xl p-6 mb-6 border border-yellow-200">
-            <h3 className="font-semibold text-yellow-800 mb-3">Quiz Details:</h3>
-            <div className="grid sm:grid-cols-2 gap-4 text-left text-sm">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs">1</div>
-                <span>30 Questions</span>
+          <div style={{
+            background: '#FEE2E2',
+            borderRadius: '20px',
+            padding: '20px',
+            marginBottom: '24px',
+            border: '1px solid #FECACA'
+          }}>
+            <h3 style={{ fontWeight: '600', color: '#991B1B', marginBottom: '12px' }}>Quiz Details:</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '12px', textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', background: '#DC2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white' }}>1</div>
+                <span style={{ fontSize: '13px', color: '#991B1B' }}>7 Questions</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs">2</div>
-                <span>30 Minutes</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', background: '#DC2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white' }}>2</div>
+                <span style={{ fontSize: '13px', color: '#991B1B' }}>30 Minutes</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs">3</div>
-                <span>Multiple Choice</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', background: '#DC2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white' }}>3</div>
+                <span style={{ fontSize: '13px', color: '#991B1B' }}>Multiple Choice</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs">4</div>
-                <span>Step-by-step Solutions</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', background: '#DC2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white' }}>4</div>
+                <span style={{ fontSize: '13px', color: '#991B1B' }}>Step-by-step Solutions</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-blue-50 rounded-2xl p-4 mb-6 border border-blue-200">
-            <h4 className="font-semibold text-blue-800 mb-2">Topics Covered:</h4>
-            <div className="grid grid-cols-2 gap-2 text-sm text-blue-700">
+          <div style={{
+            background: '#FEE2E2',
+            borderRadius: '20px',
+            padding: '16px',
+            marginBottom: '24px',
+            border: '1px solid #FECACA'
+          }}>
+            <h4 style={{ fontWeight: '600', color: '#991B1B', marginBottom: '8px', fontSize: '13px' }}>Topics Covered:</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', fontSize: '12px', color: '#7F1D1D' }}>
               <span>• Trigonometric Ratios</span>
               <span>• Unit Circle</span>
               <span>• Sine & Cosine Rules</span>
@@ -566,16 +281,27 @@ Step 3: Domain is all real numbers except these points`
           </div>
 
           <button
-            onClick={() => setQuizStarted(true)}
-            className="bg-gradient-to-r from-red-500 to-orange-600 text-white px-12 py-4 rounded-2xl hover:from-red-600 hover:to-orange-700 transition-all font-bold text-lg shadow-2xl transform hover:scale-105"
+            onClick={() => {
+              setQuizStarted(true)
+              speakText("Quiz started! You have 30 minutes. Good luck with your trigonometry quiz!")
+            }}
+            style={{
+              width: '100%',
+              padding: '16px',
+              background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '20px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              marginBottom: '16px'
+            }}
           >
             Start Quiz Now 🚀
           </button>
 
-          <Link
-            to="/topics/trigonometry"
-            className="block mt-4 text-red-600 hover:text-red-700 font-medium"
-          >
+          <Link to="/topics/trigonometry" style={{ color: '#DC2626', textDecoration: 'none', fontSize: '14px' }}>
             ← Back to Trigonometry Topics
           </Link>
         </div>
@@ -585,136 +311,195 @@ Step 3: Domain is all real numbers except these points`
 
   if (showResults) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 p-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Results Header */}
-          <div className="bg-white rounded-3xl shadow-2xl p-8 mb-6 text-center">
-            <div className={`text-6xl mb-4 ${
-              percentage >= 70 ? 'text-green-500' : 
-              percentage >= 50 ? 'text-yellow-500' : 'text-red-500'
-            }`}>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #F1F5F9 100%)',
+        padding: isMobile ? '16px' : '24px'
+      }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '32px',
+            padding: isMobile ? '24px' : '32px',
+            marginBottom: '24px',
+            textAlign: 'center',
+            border: '1px solid #E2E8F0'
+          }}>
+            <div style={{ fontSize: '60px', marginBottom: '16px' }}>
               {percentage >= 70 ? '🎉' : percentage >= 50 ? '👍' : '💪'}
             </div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">
+            <h2 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '700', color: '#0F172A', marginBottom: '8px' }}>
               Quiz Completed!
             </h2>
-            <p className="text-gray-600 mb-6 text-lg">
+            <p style={{ fontSize: '16px', color: '#64748B', marginBottom: '20px' }}>
               {getResultMessage()}
             </p>
 
-            <div className="bg-gray-50 rounded-2xl p-6 max-w-md mx-auto">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-red-600 mb-2">
-                  {score}/{shuffledQuestions.length}
-                </div>
-                <div className="text-2xl font-semibold text-gray-700 mb-4">
-                  {percentage}%
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-4">
-                  <div 
-                    className={`h-4 rounded-full transition-all duration-1000 ${
-                      percentage >= 70 ? 'bg-green-500' : 
-                      percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                    }`}
-                    style={{ width: `${percentage}%` }}
-                  ></div>
-                </div>
+            <div style={{
+              background: '#F8FAFC',
+              borderRadius: '20px',
+              padding: '20px',
+              maxWidth: '300px',
+              margin: '0 auto 20px'
+            }}>
+              <div style={{ fontSize: '36px', fontWeight: '700', color: '#DC2626', marginBottom: '4px' }}>
+                {score}/{shuffledQuestions.length}
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: '600', color: '#0F172A', marginBottom: '12px' }}>
+                {percentage}%
+              </div>
+              <div style={{ width: '100%', background: '#E2E8F0', borderRadius: '9999px', height: '8px', overflow: 'hidden' }}>
+                <div style={{
+                  width: `${percentage}%`,
+                  background: getResultColor(),
+                  height: '100%',
+                  borderRadius: '9999px',
+                  transition: 'width 1s'
+                }}></div>
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4 mt-6 max-w-md mx-auto">
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button
                 onClick={handleRetry}
-                className="bg-red-500 text-white py-3 rounded-xl hover:bg-red-600 transition-colors font-semibold"
+                style={{
+                  padding: '12px 24px',
+                  background: '#DC2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '16px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
               >
                 Try Again 🔄
               </button>
-              <Link
-                to="/topics/trigonometry"
-                className="bg-gray-500 text-white py-3 rounded-xl hover:bg-gray-600 transition-colors font-semibold text-center"
-              >
+              <Link to="/topics/trigonometry" style={{
+                padding: '12px 24px',
+                background: '#64748B',
+                color: 'white',
+                borderRadius: '16px',
+                textDecoration: 'none',
+                fontWeight: '600'
+              }}>
                 Back to Topics
               </Link>
             </div>
           </div>
 
           {/* Review Section */}
-          <div className="bg-white rounded-3xl shadow-2xl p-8">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+          <div style={{
+            background: 'white',
+            borderRadius: '32px',
+            padding: isMobile ? '20px' : '28px',
+            border: '1px solid #E2E8F0'
+          }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#0F172A', marginBottom: '20px', textAlign: 'center' }}>
               Review Your Answers
             </h3>
-            <div className="space-y-6">
-              {shuffledQuestions.map((question, index) => (
-                <div
-                  key={index}
-                  className={`p-6 rounded-2xl border-2 ${
-                    userAnswers[index] === question.correctAnswer
-                      ? 'bg-green-50 border-green-200'
-                      : 'bg-red-50 border-red-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="font-bold text-lg">Question {index + 1}</span>
-                    <span className={`px-3 py-1 rounded-full font-semibold ${
-                      userAnswers[index] === question.correctAnswer
-                        ? 'bg-green-500 text-white'
-                        : 'bg-red-500 text-white'
-                    }`}>
-                      {userAnswers[index] === question.correctAnswer ? 'Correct' : 'Incorrect'}
-                    </span>
-                  </div>
-                  
-                  <p className="text-lg font-medium text-gray-800 mb-4">
-                    {question.question}
-                  </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {shuffledQuestions.map((question, index) => {
+                const isCorrect = userAnswers[index] === question.correctAnswer
+                return (
+                  <div key={index} style={{
+                    padding: '20px',
+                    borderRadius: '20px',
+                    background: isCorrect ? '#DCFCE7' : '#FEE2E2',
+                    border: `1px solid ${isCorrect ? '#86EFAC' : '#FECACA'}`
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                      <span style={{ fontWeight: '700', fontSize: '14px' }}>Question {index + 1}</span>
+                      <span style={{
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '11px',
+                        fontWeight: '500',
+                        background: isCorrect ? '#10B981' : '#EF4444',
+                        color: 'white'
+                      }}>
+                        {isCorrect ? 'Correct' : 'Incorrect'}
+                      </span>
+                    </div>
+                    
+                    <p style={{ fontSize: '16px', fontWeight: '500', color: '#0F172A', marginBottom: '16px' }}>
+                      {question.question}
+                    </p>
 
-                  <div className="mb-4">
-                    <p className="font-semibold text-gray-700 mb-2">Your answer:</p>
-                    <div className={`p-3 rounded-lg ${
-                      userAnswers[index] === question.correctAnswer
-                        ? 'bg-green-100 border border-green-300'
-                        : 'bg-red-100 border border-red-300'
-                    }`}>
-                      {userAnswers[index] !== undefined ? (
-                        <span className="font-medium">
-                          {question.options[userAnswers[index]]}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">Not answered</span>
+                    <div style={{ marginBottom: '16px' }}>
+                      <p style={{ fontWeight: '600', color: '#475569', marginBottom: '8px', fontSize: '13px' }}>Your answer:</p>
+                      <div style={{
+                        padding: '12px',
+                        borderRadius: '12px',
+                        background: isCorrect ? '#D1FAE5' : '#FEE2E2',
+                        border: `1px solid ${isCorrect ? '#10B981' : '#EF4444'}`
+                      }}>
+                        {userAnswers[index] !== undefined ? question.options[userAnswers[index]] : 'Not answered'}
+                      </div>
+                    </div>
+
+                    {!isCorrect && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <p style={{ fontWeight: '600', color: '#10B981', marginBottom: '8px', fontSize: '13px' }}>Correct answer:</p>
+                        <div style={{
+                          padding: '12px',
+                          borderRadius: '12px',
+                          background: '#D1FAE5',
+                          border: '1px solid #10B981'
+                        }}>
+                          {question.options[question.correctAnswer]}
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <button
+                        onClick={() => {
+                          if (showExplanation === index) {
+                            setShowExplanation(null)
+                            stopSpeech()
+                          } else {
+                            setShowExplanation(index)
+                            speakText(question.explanation)
+                          }
+                        }}
+                        style={{
+                          padding: '8px 16px',
+                          background: '#DC2626',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '12px',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          marginBottom: '12px'
+                        }}
+                      >
+                        {showExplanation === index ? 'Hide Solution' : 'Show Step-by-Step Solution'}
+                      </button>
+                      
+                      {showExplanation === index && (
+                        <div style={{
+                          background: '#FEF3C7',
+                          borderRadius: '16px',
+                          padding: '16px',
+                          border: '1px solid #FDE68A'
+                        }}>
+                          <h4 style={{ fontWeight: '700', color: '#92400E', marginBottom: '12px' }}>Step-by-Step Solution:</h4>
+                          <pre style={{
+                            margin: 0,
+                            fontSize: '13px',
+                            color: '#92400E',
+                            whiteSpace: 'pre-wrap',
+                            fontFamily: 'inherit',
+                            lineHeight: '1.6'
+                          }}>
+                            {question.explanation}
+                          </pre>
+                        </div>
                       )}
                     </div>
                   </div>
-
-                  {userAnswers[index] !== question.correctAnswer && (
-                    <div className="mb-4">
-                      <p className="font-semibold text-green-700 mb-2">Correct answer:</p>
-                      <div className="p-3 bg-green-100 rounded-lg border border-green-300">
-                        <span className="font-medium">
-                          {question.options[question.correctAnswer]}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <button
-                      onClick={() => setShowExplanation(showExplanation === index ? null : index)}
-                      className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold mb-3"
-                    >
-                      {showExplanation === index ? 'Hide Solution' : 'Show Step-by-Step Solution'}
-                    </button>
-                    
-                    {showExplanation === index && (
-                      <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
-                        <h4 className="font-bold text-yellow-800 mb-3 text-lg">Step-by-Step Solution:</h4>
-                        <pre className="text-yellow-800 whitespace-pre-wrap font-sans text-sm leading-relaxed">
-                          {question.explanation}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </div>
@@ -722,27 +507,70 @@ Step 3: Domain is all real numbers except these points`
     )
   }
 
+  const currentQ = shuffledQuestions[currentQuestion]
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 p-4">
-      <div className="max-w-4xl mx-auto">
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #F1F5F9 100%)',
+      padding: isMobile ? '16px' : '20px'
+    }}>
+      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
         
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 mb-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
+        <div style={{
+          background: 'white',
+          borderRadius: '20px',
+          padding: '16px',
+          marginBottom: '20px',
+          border: '1px solid #E2E8F0'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">Trigonometry Quiz</h1>
-              <p className="text-gray-600 text-sm">
+              <h1 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A' }}>Trigonometry Quiz</h1>
+              <p style={{ fontSize: '13px', color: '#64748B' }}>
                 Question {currentQuestion + 1} of {shuffledQuestions.length}
               </p>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="bg-red-100 text-red-600 px-3 py-1 rounded-full font-semibold">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                background: '#FEE2E2',
+                padding: '6px 12px',
+                borderRadius: '20px',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: '#DC2626'
+              }}>
                 ⏱️ {formatTime(timeLeft)}
               </div>
               <button
+                onClick={readQuestion}
+                style={{
+                  padding: '6px 12px',
+                  background: '#FEE2E2',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  color: '#DC2626',
+                  fontWeight: '500'
+                }}
+              >
+                🔊 Read Question
+              </button>
+              <button
                 onClick={handleSubmit}
-                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-semibold"
+                style={{
+                  padding: '8px 16px',
+                  background: '#10B981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '13px'
+                }}
               >
                 Submit Quiz
               </button>
@@ -750,116 +578,155 @@ Step 3: Domain is all real numbers except these points`
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-            <div 
-              className="bg-red-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${((currentQuestion + 1) / shuffledQuestions.length) * 100}%` }}
-            ></div>
+          <div style={{ width: '100%', background: '#E2E8F0', borderRadius: '9999px', height: '6px', marginTop: '12px' }}>
+            <div style={{
+              width: `${((currentQuestion + 1) / shuffledQuestions.length) * 100}%`,
+              background: 'linear-gradient(90deg, #EF4444, #DC2626)',
+              height: '100%',
+              borderRadius: '9999px',
+              transition: 'width 0.3s'
+            }}></div>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-4 gap-6">
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '20px' }}>
           
           {/* Question Section */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              {shuffledQuestions.length > 0 && (
-                <>
-                  <h2 className="text-xl font-bold text-gray-800 mb-6">
-                    {shuffledQuestions[currentQuestion].question}
-                  </h2>
+          <div style={{ flex: 3 }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '24px',
+              padding: isMobile ? '20px' : '28px',
+              border: '1px solid #E2E8F0'
+            }}>
+              <h2 style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: '#0F172A', marginBottom: '24px' }}>
+                {currentQ?.question}
+              </h2>
 
-                  <div className="space-y-3">
-                    {shuffledQuestions[currentQuestion].options.map((option, optionIndex) => (
-                      <button
-                        key={optionIndex}
-                        onClick={() => handleAnswerSelect(currentQuestion, optionIndex)}
-                        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                          userAnswers[currentQuestion] === optionIndex
-                            ? 'border-red-500 bg-red-50 text-red-700'
-                            : 'border-gray-200 hover:border-red-300 hover:bg-red-25'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${
-                            userAnswers[currentQuestion] === optionIndex
-                              ? 'bg-red-500 text-white'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {String.fromCharCode(65 + optionIndex)}
-                          </div>
-                          <span className="font-medium">{option}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {currentQ?.options.map((option, optionIndex) => (
+                  <button
+                    key={optionIndex}
+                    onClick={() => handleAnswerSelect(currentQuestion, optionIndex)}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '16px',
+                      borderRadius: '16px',
+                      border: `2px solid ${userAnswers[currentQuestion] === optionIndex ? '#DC2626' : '#E2E8F0'}`,
+                      background: userAnswers[currentQuestion] === optionIndex ? '#FEE2E2' : 'white',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: '600',
+                        background: userAnswers[currentQuestion] === optionIndex ? '#DC2626' : '#F1F5F9',
+                        color: userAnswers[currentQuestion] === optionIndex ? 'white' : '#64748B'
+                      }}>
+                        {String.fromCharCode(65 + optionIndex)}
+                      </div>
+                      <span style={{ fontSize: '15px', color: '#0F172A' }}>{option}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Navigation */}
-            <div className="flex justify-between mt-4">
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px', gap: '12px' }}>
               <button
                 onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
                 disabled={currentQuestion === 0}
-                className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all ${
-                  currentQuestion === 0
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-500 text-white hover:bg-gray-600'
-                }`}
+                style={{
+                  padding: '12px 20px',
+                  background: currentQuestion === 0 ? '#F1F5F9' : 'white',
+                  color: currentQuestion === 0 ? '#94A3B8' : '#64748B',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '14px',
+                  cursor: currentQuestion === 0 ? 'not-allowed' : 'pointer',
+                  fontWeight: '500'
+                }}
               >
-                <span>←</span>
-                <span>Previous</span>
+                ← Previous
               </button>
 
               <button
                 onClick={() => setCurrentQuestion(prev => Math.min(shuffledQuestions.length - 1, prev + 1))}
                 disabled={currentQuestion === shuffledQuestions.length - 1}
-                className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all ${
-                  currentQuestion === shuffledQuestions.length - 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-red-500 text-white hover:bg-red-600'
-                }`}
+                style={{
+                  padding: '12px 20px',
+                  background: currentQuestion === shuffledQuestions.length - 1 ? '#F1F5F9' : 'linear-gradient(135deg, #EF4444, #DC2626)',
+                  color: currentQuestion === shuffledQuestions.length - 1 ? '#94A3B8' : 'white',
+                  border: 'none',
+                  borderRadius: '14px',
+                  cursor: currentQuestion === shuffledQuestions.length - 1 ? 'not-allowed' : 'pointer',
+                  fontWeight: '500'
+                }}
               >
-                <span>Next</span>
-                <span>→</span>
+                Next →
               </button>
             </div>
           </div>
 
           {/* Question Navigator */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg p-4 sticky top-4">
-              <h3 className="font-semibold text-gray-800 mb-3">Questions</h3>
-              <div className="grid grid-cols-5 gap-2">
+          <div style={{ flex: 1 }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '20px',
+              padding: '16px',
+              border: '1px solid #E2E8F0',
+              position: 'sticky',
+              top: '20px'
+            }}>
+              <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#0F172A', marginBottom: '12px' }}>Questions</h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(5, 1fr)',
+                gap: '8px'
+              }}>
                 {shuffledQuestions.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentQuestion(index)}
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${
-                      currentQuestion === index
-                        ? 'bg-red-500 text-white shadow-md'
-                        : userAnswers[index] !== undefined
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      background: currentQuestion === index ? '#DC2626' : userAnswers[index] !== undefined ? '#10B981' : '#F1F5F9',
+                      color: currentQuestion === index || userAnswers[index] !== undefined ? 'white' : '#64748B',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
                   >
                     {index + 1}
                   </button>
                 ))}
               </div>
               
-              <div className="mt-4 space-y-2 text-xs">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-red-500 rounded"></div>
+              <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                  <div style={{ width: '12px', height: '12px', background: '#DC2626', borderRadius: '3px' }}></div>
                   <span>Current</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-green-500 rounded"></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                  <div style={{ width: '12px', height: '12px', background: '#10B981', borderRadius: '3px' }}></div>
                   <span>Answered</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-gray-100 rounded"></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                  <div style={{ width: '12px', height: '12px', background: '#F1F5F9', borderRadius: '3px', border: '1px solid #E2E8F0' }}></div>
                   <span>Unanswered</span>
                 </div>
               </div>
