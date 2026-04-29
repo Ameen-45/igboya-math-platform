@@ -1,26 +1,68 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "../pages/Dashboard";
-import Splash from "../components/Splash";  // Splash is in components
+import Splash from "../components/Splash";
 import Topics from "../pages/Topics";
-import Auth from "../components/Auth";  // Auth is in components
+import Auth from "../components/Auth";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 export default function AppRoutes() {
+  // Get user from localStorage for dashboard
+  const user = JSON.parse(localStorage.getItem("user"));
+
   return (
     <Routes>
-      {/* Default route */}
+      {/* Public Routes - No login required */}
       <Route path="/" element={<Navigate to="/splash" />} />
-
-      {/* Splash screen */}
       <Route path="/splash" element={<Splash />} />
-
-      {/* Auth page */}
       <Route path="/auth" element={<Auth />} />
 
-      {/* Main app */}
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/topics" element={<Topics />} />
+      {/* Protected Routes - Login required */}
+      <Route 
+        path="/dashboard" 
+        element={
+          <ProtectedRoute>
+            <Dashboard user={user} />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/topics" 
+        element={
+          <ProtectedRoute>
+            <Topics />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/topics/:topic" 
+        element={
+          <ProtectedRoute>
+            <Topics />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/community" 
+        element={
+          <ProtectedRoute>
+            <div>Community Page (Coming Soon)</div>
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/settings" 
+        element={
+          <ProtectedRoute>
+            <div>Settings Page (Coming Soon)</div>
+          </ProtectedRoute>
+        } 
+      />
 
-      {/* Catch unknown routes */}
+      {/* Catch unknown routes - redirect to splash */}
       <Route path="*" element={<Navigate to="/splash" />} />
     </Routes>
   );
