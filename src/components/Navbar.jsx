@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+﻿import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 
 export default function Navbar({ user, onLogout }) {
@@ -15,6 +15,11 @@ export default function Navbar({ user, onLogout }) {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Don't show navbar on splash and auth pages
+  if (location.pathname === '/splash' || location.pathname === '/auth') {
+    return null
+  }
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: '🏠' },
@@ -54,11 +59,6 @@ export default function Navbar({ user, onLogout }) {
     setIsMobileMenuOpen(false)
     document.body.style.overflow = 'unset'
   }, [location])
-
-  // Don't show navbar on splash and auth pages
-  if (location.pathname === '/splash' || location.pathname === '/auth') {
-    return null
-  }
 
   return (
     <>
@@ -441,6 +441,10 @@ export default function Navbar({ user, onLogout }) {
           @media (max-width: 768px) {
             button {
               display: flex !important;
+            }
+            
+            div[style*="display: flex; align-items: center; gap: 4px; background: #F8FAFC; border-radius: 16px; padding: 4px"] {
+              display: none !important;
             }
           }
         `}

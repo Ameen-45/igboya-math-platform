@@ -21,6 +21,12 @@ import AlgebraSolver from "../pages/topics/algebra/EquationSolver";
 import AlgebraQuiz from "../pages/topics/algebra/Quiz";
 import AlgebraPractice from "../pages/topics/algebra/InteractivePractice";
 
+// Geometry sub-pages
+import GeometryIntroduction from "../pages/topics/geometry/Introduction";
+import GeometryExamples from "../pages/topics/geometry/Examples";
+import GeometryPractice from "../pages/topics/geometry/InteractivePractice";
+import GeometryQuiz from "../pages/topics/geometry/Quiz";
+
 // Calculus sub-pages
 import CalculusIntroduction from "../pages/topics/calculus/Introduction";
 import CalculusExamples from "../pages/topics/calculus/Examples";
@@ -41,9 +47,7 @@ import TrigonometryTriangleSolver from "../pages/topics/trigonometry/TriangleSol
 import TrigonometryQuiz from "../pages/topics/trigonometry/Quiz";
 import TrigonometryPractice from "../pages/topics/trigonometry/InteractivePractice";
 
-export default function AppRoutes() {
-  const user = JSON.parse(localStorage.getItem("user"));
-
+export default function AppRoutes({ user }) {
   return (
     <Routes>
       {/* Public Routes */}
@@ -70,6 +74,12 @@ export default function AppRoutes() {
       <Route path="/topics/algebra/solver" element={<ProtectedRoute><AlgebraSolver /></ProtectedRoute>} />
       <Route path="/topics/algebra/quiz" element={<ProtectedRoute><AlgebraQuiz /></ProtectedRoute>} />
       <Route path="/topics/algebra/practice" element={<ProtectedRoute><AlgebraPractice /></ProtectedRoute>} />
+
+      {/* Geometry Sub-pages */}
+      <Route path="/topics/geometry/introduction" element={<ProtectedRoute><GeometryIntroduction /></ProtectedRoute>} />
+      <Route path="/topics/geometry/examples" element={<ProtectedRoute><GeometryExamples /></ProtectedRoute>} />
+      <Route path="/topics/geometry/practice" element={<ProtectedRoute><GeometryPractice /></ProtectedRoute>} />
+      <Route path="/topics/geometry/quiz" element={<ProtectedRoute><GeometryQuiz /></ProtectedRoute>} />
 
       {/* Calculus Sub-pages */}
       <Route path="/topics/calculus/introduction" element={<ProtectedRoute><CalculusIntroduction /></ProtectedRoute>} />
