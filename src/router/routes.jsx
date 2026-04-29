@@ -21,6 +21,12 @@ import AlgebraSolver from "../pages/topics/algebra/EquationSolver";
 import AlgebraQuiz from "../pages/topics/algebra/Quiz";
 import AlgebraPractice from "../pages/topics/algebra/InteractivePractice";
 
+// Calculus sub-pages
+import CalculusIntroduction from "../pages/topics/calculus/Introduction";
+import CalculusExamples from "../pages/topics/calculus/Examples";
+import CalculusPractice from "../pages/topics/calculus/InteractivePractice";
+import CalculusQuiz from "../pages/topics/calculus/Quiz";
+
 // Statistics sub-pages
 import StatisticsIntroduction from "../pages/topics/statistics/Introduction";
 import StatisticsExamples from "../pages/topics/statistics/Examples";
@@ -64,6 +70,12 @@ export default function AppRoutes() {
       <Route path="/topics/algebra/solver" element={<ProtectedRoute><AlgebraSolver /></ProtectedRoute>} />
       <Route path="/topics/algebra/quiz" element={<ProtectedRoute><AlgebraQuiz /></ProtectedRoute>} />
       <Route path="/topics/algebra/practice" element={<ProtectedRoute><AlgebraPractice /></ProtectedRoute>} />
+
+      {/* Calculus Sub-pages */}
+      <Route path="/topics/calculus/introduction" element={<ProtectedRoute><CalculusIntroduction /></ProtectedRoute>} />
+      <Route path="/topics/calculus/examples" element={<ProtectedRoute><CalculusExamples /></ProtectedRoute>} />
+      <Route path="/topics/calculus/practice" element={<ProtectedRoute><CalculusPractice /></ProtectedRoute>} />
+      <Route path="/topics/calculus/quiz" element={<ProtectedRoute><CalculusQuiz /></ProtectedRoute>} />
 
       {/* Statistics Sub-pages */}
       <Route path="/topics/statistics/introduction" element={<ProtectedRoute><StatisticsIntroduction /></ProtectedRoute>} />

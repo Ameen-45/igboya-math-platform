@@ -1,13 +1,45 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 
 export default function StatisticsQuiz() {
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [userAnswers, setUserAnswers] = useState({})
   const [showResults, setShowResults] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(1800) // 30 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(1800)
   const [quizStarted, setQuizStarted] = useState(false)
   const [showExplanation, setShowExplanation] = useState(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  const speechSynth = useRef(null)
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const stopSpeech = useCallback(() => {
+    if (speechSynth.current) {
+      window.speechSynthesis.cancel()
+    }
+    setIsPlaying(false)
+  }, [])
+
+  const speakText = useCallback((text) => {
+    stopSpeech()
+    if (!("speechSynthesis" in window)) return
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.rate = 0.85
+    utterance.pitch = 1.05
+    utterance.volume = 1
+    utterance.onstart = () => setIsPlaying(true)
+    utterance.onend = () => setIsPlaying(false)
+    utterance.onerror = () => setIsPlaying(false)
+    speechSynth.current = utterance
+    window.speechSynthesis.speak(utterance)
+  }, [stopSpeech])
 
   const statisticsQuestions = [
     {
@@ -15,433 +47,126 @@ export default function StatisticsQuiz() {
       question: "What is the mean of the dataset: 5, 7, 8, 10, 15?",
       options: ["9", "8", "7.5", "10"],
       correctAnswer: 0,
-      explanation: `Step 1: Add all values
-5 + 7 + 8 + 10 + 15 = 45
-
-Step 2: Divide by number of values
-45 ÷ 5 = 9
-
-Step 3: The mean is 9`
+      explanation: "Step 1: Add all values: 5+7+8+10+15 = 45. Step 2: Divide by number of values: 45 ÷ 5 = 9. The mean is 9.",
+      voiceText: "What is the mean of the dataset: 5, 7, 8, 10, 15?"
     },
     {
       id: 2,
       question: "What is the median of: 12, 8, 15, 6, 20?",
       options: ["12", "10", "15", "8"],
       correctAnswer: 0,
-      explanation: `Step 1: Arrange in ascending order
-6, 8, 12, 15, 20
-
-Step 2: Find middle value (odd number of values)
-Middle position: (5 + 1) ÷ 2 = 3rd value
-
-Step 3: The median is 12`
+      explanation: "Step 1: Arrange in ascending order: 6, 8, 12, 15, 20. Step 2: Middle value is 12. The median is 12.",
+      voiceText: "What is the median of: 12, 8, 15, 6, 20?"
     },
     {
       id: 3,
       question: "What is the mode of: 4, 7, 4, 3, 7, 4, 9?",
       options: ["4", "7", "3", "No mode"],
       correctAnswer: 0,
-      explanation: `Step 1: Count frequency of each value
-4 appears 3 times
-7 appears 2 times
-3 appears 1 time
-9 appears 1 time
-
-Step 2: Identify most frequent value
-4 appears most frequently (3 times)
-
-Step 3: The mode is 4`
+      explanation: "Count frequency: 4 appears 3 times, 7 appears twice, 3 and 9 appear once. The mode is 4.",
+      voiceText: "What is the mode of: 4, 7, 4, 3, 7, 4, 9?"
     },
     {
       id: 4,
       question: "Calculate the range: 25, 31, 42, 18, 37",
       options: ["24", "19", "26", "23"],
       correctAnswer: 0,
-      explanation: `Step 1: Find maximum value
-Maximum = 42
-
-Step 2: Find minimum value
-Minimum = 18
-
-Step 3: Calculate range
-Range = Maximum - Minimum = 42 - 18 = 24`
+      explanation: "Maximum = 42, Minimum = 18. Range = 42 - 18 = 24.",
+      voiceText: "Calculate the range: 25, 31, 42, 18, 37."
     },
     {
       id: 5,
       question: "What is the probability of rolling an even number on a fair die?",
       options: ["1/2", "1/3", "2/3", "1/6"],
       correctAnswer: 0,
-      explanation: `Step 1: Identify favorable outcomes
-Even numbers on a die: 2, 4, 6 (3 outcomes)
-
-Step 2: Identify total possible outcomes
-Total numbers on a die: 1, 2, 3, 4, 5, 6 (6 outcomes)
-
-Step 3: Calculate probability
-Probability = Favorable outcomes / Total outcomes = 3/6 = 1/2`
+      explanation: "Even numbers: 2,4,6 (3 outcomes). Total outcomes: 6. Probability = 3/6 = 1/2.",
+      voiceText: "What is the probability of rolling an even number on a fair die?"
     },
     {
       id: 6,
       question: "Calculate variance for: 2, 4, 6, 8, 10",
       options: ["8", "6", "10", "4"],
       correctAnswer: 0,
-      explanation: `Step 1: Find mean
-Mean = (2+4+6+8+10)/5 = 30/5 = 6
-
-Step 2: Calculate squared differences
-(2-6)²=16, (4-6)²=4, (6-6)²=0, (8-6)²=4, (10-6)²=16
-
-Step 3: Sum squared differences
-16+4+0+4+16 = 40
-
-Step 4: Divide by number of values
-40 ÷ 5 = 8
-
-Step 5: Variance = 8`
+      explanation: "Mean = 6. Squared differences: 16,4,0,4,16. Sum = 40. Variance = 40/5 = 8.",
+      voiceText: "Calculate variance for: 2, 4, 6, 8, 10."
     },
     {
       id: 7,
       question: "What is the standard deviation if variance is 16?",
       options: ["4", "8", "16", "256"],
       correctAnswer: 0,
-      explanation: `Step 1: Recall relationship
-Standard Deviation = √Variance
-
-Step 2: Calculate square root
-√16 = 4
-
-Step 3: Standard Deviation = 4`
+      explanation: "Standard deviation = √variance = √16 = 4.",
+      voiceText: "What is the standard deviation if variance is 16?"
     },
     {
       id: 8,
       question: "If P(A) = 0.3 and P(B) = 0.4, and A and B are independent, what is P(A and B)?",
       options: ["0.12", "0.7", "0.1", "0.58"],
       correctAnswer: 0,
-      explanation: `Step 1: Use multiplication rule for independent events
-For independent events: P(A and B) = P(A) × P(B)
-
-Step 2: Multiply probabilities
-0.3 × 0.4 = 0.12
-
-Step 3: P(A and B) = 0.12`
+      explanation: "For independent events: P(A and B) = P(A) × P(B) = 0.3 × 0.4 = 0.12.",
+      voiceText: "If P of A equals 0.3 and P of B equals 0.4, and A and B are independent, what is P of A and B?"
     },
     {
       id: 9,
-      question: "What is Q1 (first quartile) of: 3, 7, 8, 12, 14, 18, 21, 24?",
+      question: "What is Q1 of: 3, 7, 8, 12, 14, 18, 21, 24?",
       options: ["7.5", "8", "10", "12"],
       correctAnswer: 0,
-      explanation: `Step 1: Find median of lower half
-Dataset: 3, 7, 8, 12, 14, 18, 21, 24
-Lower half (first 4 values): 3, 7, 8, 12
-
-Step 2: Find median of lower half
-(7 + 8) ÷ 2 = 15 ÷ 2 = 7.5
-
-Step 3: Q1 = 7.5`
+      explanation: "Lower half: 3,7,8,12. Median of lower half = (7+8)/2 = 7.5.",
+      voiceText: "What is the first quartile of: 3, 7, 8, 12, 14, 18, 21, 24?"
     },
     {
       id: 10,
       question: "Calculate z-score for x=85, μ=75, σ=5",
       options: ["2", "1.5", "2.5", "3"],
       correctAnswer: 0,
-      explanation: `Step 1: Use z-score formula
-z = (x - μ) ÷ σ
-
-Step 2: Substitute values
-z = (85 - 75) ÷ 5 = 10 ÷ 5 = 2
-
-Step 3: z-score = 2`
+      explanation: "z = (x - μ)/σ = (85 - 75)/5 = 10/5 = 2.",
+      voiceText: "Calculate z-score for x equals 85, mean equals 75, standard deviation equals 5."
     },
     {
       id: 11,
       question: "What is the correlation coefficient range?",
       options: ["-1 to +1", "0 to 1", "-1 to 0", "0 to 100"],
       correctAnswer: 0,
-      explanation: `Step 1: Understand correlation coefficient
-Pearson's correlation coefficient (r) measures linear relationship
-
-Step 2: Know the range
-r ranges from -1 to +1
-
-Step 3: Interpret values
--1 = perfect negative correlation
-+1 = perfect positive correlation
-0 = no correlation`
+      explanation: "Pearson's correlation coefficient r ranges from -1 to +1.",
+      voiceText: "What is the correlation coefficient range?"
     },
     {
       id: 12,
       question: "If P(A) = 0.6, what is P(not A)?",
       options: ["0.4", "0.6", "0.3", "0.5"],
       correctAnswer: 0,
-      explanation: `Step 1: Use complement rule
-P(not A) = 1 - P(A)
-
-Step 2: Substitute value
-P(not A) = 1 - 0.6 = 0.4
-
-Step 3: P(not A) = 0.4`
+      explanation: "P(not A) = 1 - P(A) = 1 - 0.6 = 0.4.",
+      voiceText: "If P of A equals 0.6, what is P of not A?"
     },
     {
       id: 13,
       question: "What is the IQR for: 5, 7, 9, 12, 15, 18, 22?",
-      options: ["9", "8", "10", "11"],
+      options: ["11", "8", "10", "9"],
       correctAnswer: 0,
-      explanation: `Step 1: Find Q1 (median of lower half)
-Lower half: 5, 7, 9 → Q1 = 7
-
-Step 2: Find Q3 (median of upper half)
-Upper half: 15, 18, 22 → Q3 = 18
-
-Step 3: Calculate IQR
-IQR = Q3 - Q1 = 18 - 7 = 11`
+      explanation: "Q1 = 7, Q3 = 18. IQR = 18 - 7 = 11.",
+      voiceText: "What is the interquartile range for: 5, 7, 9, 12, 15, 18, 22?"
     },
     {
       id: 14,
       question: "In normal distribution, what percentage lies within ±1σ?",
       options: ["68%", "95%", "99.7%", "50%"],
       correctAnswer: 0,
-      explanation: `Step 1: Recall empirical rule
-For normal distribution:
-±1σ contains 68% of data
-±2σ contains 95% of data
-±3σ contains 99.7% of data
-
-Step 2: Answer for ±1σ
-68% of data lies within ±1 standard deviation`
+      explanation: "Empirical rule: ±1σ contains 68% of data.",
+      voiceText: "In normal distribution, what percentage lies within plus or minus one standard deviation?"
     },
     {
       id: 15,
       question: "Calculate coefficient of variation if μ=50 and σ=10",
       options: ["20%", "25%", "15%", "30%"],
       correctAnswer: 0,
-      explanation: `Step 1: Use CV formula
-CV = (σ ÷ μ) × 100%
-
-Step 2: Substitute values
-CV = (10 ÷ 50) × 100% = 0.2 × 100% = 20%
-
-Step 3: Coefficient of Variation = 20%`
-    },
-    {
-      id: 16,
-      question: "What is the probability of drawing a heart from a standard deck?",
-      options: ["1/4", "1/13", "1/52", "1/2"],
-      correctAnswer: 0,
-      explanation: `Step 1: Count favorable outcomes
-Hearts in a deck: 13 cards
-
-Step 2: Count total outcomes
-Total cards: 52
-
-Step 3: Calculate probability
-Probability = 13/52 = 1/4`
-    },
-    {
-      id: 17,
-      question: "If P(A|B) = 0.3 and P(B) = 0.5, what is P(A and B)?",
-      options: ["0.15", "0.2", "0.3", "0.8"],
-      correctAnswer: 0,
-      explanation: `Step 1: Use conditional probability formula
-P(A|B) = P(A and B) ÷ P(B)
-
-Step 2: Rearrange formula
-P(A and B) = P(A|B) × P(B)
-
-Step 3: Calculate
-P(A and B) = 0.3 × 0.5 = 0.15`
-    },
-    {
-      id: 18,
-      question: "What is the geometric mean of 4 and 9?",
-      options: ["6", "6.5", "5", "7"],
-      correctAnswer: 0,
-      explanation: `Step 1: Use geometric mean formula
-Geometric Mean = √(a × b)
-
-Step 2: Multiply values
-4 × 9 = 36
-
-Step 3: Take square root
-√36 = 6
-
-Step 4: Geometric Mean = 6`
-    },
-    {
-      id: 19,
-      question: "Calculate harmonic mean of 2, 3, and 6",
-      options: ["3", "2.5", "3.5", "4"],
-      correctAnswer: 0,
-      explanation: `Step 1: Use harmonic mean formula
-Harmonic Mean = n ÷ (∑(1/x))
-
-Step 2: Calculate sum of reciprocals
-1/2 + 1/3 + 1/6 = 3/6 + 2/6 + 1/6 = 6/6 = 1
-
-Step 3: Divide number of values
-3 ÷ 1 = 3
-
-Step 4: Harmonic Mean = 3`
-    },
-    {
-      id: 20,
-      question: "What is the expected value of fair die roll?",
-      options: ["3.5", "3", "4", "3.8"],
-      correctAnswer: 0,
-      explanation: `Step 1: List all outcomes and probabilities
-Each number 1-6 has probability 1/6
-
-Step 2: Calculate expected value
-E(X) = (1+2+3+4+5+6) × (1/6) = 21 × (1/6) = 3.5
-
-Step 3: Expected Value = 3.5`
-    },
-    {
-      id: 21,
-      question: "If variance is 25, what is standard deviation?",
-      options: ["5", "10", "25", "625"],
-      correctAnswer: 0,
-      explanation: `Step 1: Relationship between variance and standard deviation
-Standard Deviation = √Variance
-
-Step 2: Calculate square root
-√25 = 5
-
-Step 3: Standard Deviation = 5`
-    },
-    {
-      id: 22,
-      question: "What is P(A or B) if P(A)=0.4, P(B)=0.3, and P(A and B)=0.1?",
-      options: ["0.6", "0.7", "0.5", "0.8"],
-      correctAnswer: 0,
-      explanation: `Step 1: Use addition rule
-P(A or B) = P(A) + P(B) - P(A and B)
-
-Step 2: Substitute values
-P(A or B) = 0.4 + 0.3 - 0.1 = 0.6
-
-Step 3: P(A or B) = 0.6`
-    },
-    {
-      id: 23,
-      question: "What is the median of normal distribution?",
-      options: ["Equal to mean", "Greater than mean", "Less than mean", "Zero"],
-      correctAnswer: 0,
-      explanation: `Step 1: Understand normal distribution properties
-In normal distribution:
-- Mean, median, and mode are all equal
-- Distribution is symmetric
-
-Step 2: Conclusion
-Median = Mean in normal distribution`
-    },
-    {
-      id: 24,
-      question: "Calculate skewness if mean=50, median=45, mode=40",
-      options: ["Positive", "Negative", "Zero", "Cannot determine"],
-      correctAnswer: 0,
-      explanation: `Step 1: Use relationship between mean, median, mode
-For unimodal distributions:
-If mean > median > mode → Positive skew
-If mean < median < mode → Negative skew
-
-Step 2: Analyze given values
-50 > 45 > 40 → Mean > Median > Mode
-
-Step 3: Conclusion
-Distribution is positively skewed`
-    },
-    {
-      id: 25,
-      question: "What is the range of probability values?",
-      options: ["0 to 1", "-1 to 1", "0 to 100", "0 to infinity"],
-      correctAnswer: 0,
-      explanation: `Step 1: Understand probability axioms
-Probability values must satisfy:
-1. 0 ≤ P(A) ≤ 1 for any event A
-2. P(sample space) = 1
-3. P(empty set) = 0
-
-Step 2: Range conclusion
-All probability values range from 0 to 1 inclusive`
-    },
-    {
-      id: 26,
-      question: "If r=0.8, how would you describe correlation?",
-      options: ["Strong positive", "Weak positive", "Strong negative", "No correlation"],
-      correctAnswer: 0,
-      explanation: `Step 1: Interpret correlation coefficient
-r = +0.8 indicates:
-- Positive relationship (both variables increase together)
-- Strong correlation (close to +1)
-
-Step 2: Description
-Strong positive linear correlation`
-    },
-    {
-      id: 27,
-      question: "What is the formula for sample variance?",
-      options: ["∑(x-μ)²/(n-1)", "∑(x-μ)²/n", "∑(x-μ)/n", "√[∑(x-μ)²/n]"],
-      correctAnswer: 0,
-      explanation: `Step 1: Distinguish population vs sample variance
-Population variance: σ² = ∑(x-μ)²/N
-Sample variance: s² = ∑(x-x̄)²/(n-1)
-
-Step 2: Sample variance uses n-1 (Bessel's correction)
-This corrects bias in estimating population variance
-
-Step 3: Correct formula: ∑(x-μ)²/(n-1)`
-    },
-    {
-      id: 28,
-      question: "What percentage lies between Q1 and Q3?",
-      options: ["50%", "25%", "75%", "68%"],
-      correctAnswer: 0,
-      explanation: `Step 1: Understand quartiles
-Q1 = 25th percentile
-Q3 = 75th percentile
-
-Step 2: Calculate percentage between
-75% - 25% = 50%
-
-Step 3: Conclusion
-50% of data lies between Q1 and Q3`
-    },
-    {
-      id: 29,
-      question: "If P(A)=0.2, P(B)=0.3, and they're mutually exclusive, what is P(A and B)?",
-      options: ["0", "0.06", "0.5", "0.1"],
-      correctAnswer: 0,
-      explanation: `Step 1: Understand mutually exclusive events
-Mutually exclusive events cannot occur together
-P(A and B) = 0 for mutually exclusive events
-
-Step 2: Apply definition
-Since A and B are mutually exclusive, P(A and B) = 0`
-    },
-    {
-      id: 30,
-      question: "What is the formula for binomial probability?",
-      options: ["C(n,k)p^k(1-p)^(n-k)", "np", "√[np(1-p)]", "p(1-p)"],
-      correctAnswer: 0,
-      explanation: `Step 1: Binomial probability formula
-P(X=k) = C(n,k) × p^k × (1-p)^(n-k)
-
-Where:
-C(n,k) = combinations
-p = probability of success
-n = number of trials
-k = number of successes
-
-Step 2: Correct formula
-C(n,k)p^k(1-p)^(n-k)`
+      explanation: "CV = (σ/μ) × 100% = (10/50) × 100% = 20%.",
+      voiceText: "Calculate coefficient of variation if mean equals 50 and standard deviation equals 10."
     }
   ]
 
-  // Shuffle questions for random order
   const [shuffledQuestions, setShuffledQuestions] = useState([])
 
   useEffect(() => {
-    // Shuffle questions when component mounts
     const shuffled = [...statisticsQuestions].sort(() => Math.random() - 0.5)
     setShuffledQuestions(shuffled)
   }, [])
@@ -462,19 +187,27 @@ C(n,k)p^k(1-p)^(n-k)`
     return () => clearInterval(timer)
   }, [quizStarted, timeLeft, showResults])
 
+  useEffect(() => {
+    return () => stopSpeech()
+  }, [stopSpeech])
+
   const handleAnswerSelect = (questionIndex, optionIndex) => {
     setUserAnswers(prev => ({
       ...prev,
       [questionIndex]: optionIndex
     }))
+    const question = shuffledQuestions[questionIndex]
+    speakText(`You selected option ${String.fromCharCode(65 + optionIndex)}: ${question.options[optionIndex]}`)
   }
 
   const handleSubmit = () => {
     setShowResults(true)
+    stopSpeech()
+    const score = calculateScore()
+    speakText(`Quiz completed! You scored ${score} out of ${shuffledQuestions.length}. ${getResultMessage()}`)
   }
 
   const handleRetry = () => {
-    // Reshuffle questions and reset state
     const reshuffled = [...statisticsQuestions].sort(() => Math.random() - 0.5)
     setShuffledQuestions(reshuffled)
     setUserAnswers({})
@@ -483,6 +216,7 @@ C(n,k)p^k(1-p)^(n-k)`
     setTimeLeft(1800)
     setQuizStarted(false)
     setShowExplanation(null)
+    stopSpeech()
   }
 
   const calculateScore = () => {
@@ -505,59 +239,115 @@ C(n,k)p^k(1-p)^(n-k)`
   const percentage = Math.round((score / shuffledQuestions.length) * 100)
 
   const getResultMessage = () => {
-    if (percentage >= 90) return "Outstanding! 🎉 You're a statistics genius!"
-    if (percentage >= 80) return "Excellent work! 🌟 You've mastered statistics!"
-    if (percentage >= 70) return "Great job! 💪 You understand statistics well!"
-    if (percentage >= 60) return "Good effort! 👍 Keep practicing!"
-    if (percentage >= 50) return "Not bad! 📚 Review the explanations and try again!"
-    return "Keep practicing! 🔥 Every mistake is a learning opportunity. Try again!"
+    if (percentage >= 90) return "Outstanding! You're a statistics genius!"
+    if (percentage >= 80) return "Excellent work! You've mastered statistics!"
+    if (percentage >= 70) return "Great job! You understand statistics well!"
+    if (percentage >= 60) return "Good effort! Keep practicing!"
+    if (percentage >= 50) return "Not bad! Review the explanations and try again!"
+    return "Keep practicing! Every mistake is a learning opportunity. Try again!"
+  }
+
+  const getResultColor = () => {
+    if (percentage >= 70) return '#10B981'
+    if (percentage >= 50) return '#F59E0B'
+    return '#EF4444'
+  }
+
+  const readQuestion = () => {
+    const q = shuffledQuestions[currentQuestion]
+    speakText(`Question ${currentQuestion + 1}: ${q.question}. Options: A: ${q.options[0]}, B: ${q.options[1]}, C: ${q.options[2]}, D: ${q.options[3]}`)
   }
 
   if (!quizStarted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-8 text-center">
-          <div className="text-6xl mb-6">📊</div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #F1F5F9 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px'
+      }}>
+        <div style={{
+          maxWidth: '600px',
+          width: '100%',
+          background: 'white',
+          borderRadius: '32px',
+          padding: isMobile ? '32px 24px' : '48px',
+          textAlign: 'center',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{
+            width: isMobile ? '80px' : '100px',
+            height: isMobile ? '80px' : '100px',
+            background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+            borderRadius: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: isMobile ? '40px' : '50px',
+            margin: '0 auto 24px'
+          }}>
+            📊
+          </div>
+          <h1 style={{ fontSize: isMobile ? '28px' : '36px', fontWeight: '700', color: '#0F172A', marginBottom: '12px' }}>
             Statistics Quiz Challenge
           </h1>
-          <p className="text-gray-600 mb-6 text-lg">
-            Test your statistics knowledge with 30 challenging questions. You have 30 minutes to complete the quiz!
+          <p style={{ fontSize: isMobile ? '14px' : '16px', color: '#64748B', marginBottom: '24px' }}>
+            Test your statistics knowledge with 15 challenging questions. You have 30 minutes to complete the quiz!
           </p>
           
-          <div className="bg-yellow-50 rounded-2xl p-6 mb-6 border border-yellow-200">
-            <h3 className="font-semibold text-yellow-800 mb-3">Quiz Details:</h3>
-            <div className="grid sm:grid-cols-2 gap-4 text-left text-sm">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs">1</div>
-                <span>30 Questions</span>
+          <div style={{
+            background: '#FEF3C7',
+            borderRadius: '20px',
+            padding: '20px',
+            marginBottom: '24px',
+            border: '1px solid #FDE68A'
+          }}>
+            <h3 style={{ fontWeight: '600', color: '#92400E', marginBottom: '12px' }}>Quiz Details:</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '12px', textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', background: '#F59E0B', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white' }}>1</div>
+                <span style={{ fontSize: '13px', color: '#92400E' }}>15 Questions</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs">2</div>
-                <span>30 Minutes</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', background: '#F59E0B', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white' }}>2</div>
+                <span style={{ fontSize: '13px', color: '#92400E' }}>30 Minutes</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs">3</div>
-                <span>Multiple Choice</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', background: '#F59E0B', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white' }}>3</div>
+                <span style={{ fontSize: '13px', color: '#92400E' }}>Multiple Choice</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs">4</div>
-                <span>Step-by-step Solutions</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', background: '#F59E0B', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white' }}>4</div>
+                <span style={{ fontSize: '13px', color: '#92400E' }}>Step-by-step Solutions</span>
               </div>
             </div>
           </div>
 
           <button
-            onClick={() => setQuizStarted(true)}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-12 py-4 rounded-2xl hover:from-orange-600 hover:to-orange-700 transition-all font-bold text-lg shadow-2xl transform hover:scale-105"
+            onClick={() => {
+              setQuizStarted(true)
+              speakText("Quiz started! You have 30 minutes. Good luck with your statistics quiz!")
+            }}
+            style={{
+              width: '100%',
+              padding: '16px',
+              background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '20px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              marginBottom: '16px'
+            }}
           >
             Start Quiz Now 🚀
           </button>
 
-          <Link
-            to="/topics/statistics"
-            className="block mt-4 text-orange-600 hover:text-orange-700 font-medium"
-          >
+          <Link to="/topics/statistics" style={{ color: '#D97706', textDecoration: 'none', fontSize: '14px' }}>
             ← Back to Statistics Topics
           </Link>
         </div>
@@ -567,136 +357,195 @@ C(n,k)p^k(1-p)^(n-k)`
 
   if (showResults) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 p-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Results Header */}
-          <div className="bg-white rounded-3xl shadow-2xl p-8 mb-6 text-center">
-            <div className={`text-6xl mb-4 ${
-              percentage >= 70 ? 'text-green-500' : 
-              percentage >= 50 ? 'text-yellow-500' : 'text-red-500'
-            }`}>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #F1F5F9 100%)',
+        padding: isMobile ? '16px' : '24px'
+      }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '32px',
+            padding: isMobile ? '24px' : '32px',
+            marginBottom: '24px',
+            textAlign: 'center',
+            border: '1px solid #E2E8F0'
+          }}>
+            <div style={{ fontSize: '60px', marginBottom: '16px' }}>
               {percentage >= 70 ? '🎉' : percentage >= 50 ? '👍' : '💪'}
             </div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">
+            <h2 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '700', color: '#0F172A', marginBottom: '8px' }}>
               Quiz Completed!
             </h2>
-            <p className="text-gray-600 mb-6 text-lg">
+            <p style={{ fontSize: '16px', color: '#64748B', marginBottom: '20px' }}>
               {getResultMessage()}
             </p>
 
-            <div className="bg-gray-50 rounded-2xl p-6 max-w-md mx-auto">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-orange-600 mb-2">
-                  {score}/{shuffledQuestions.length}
-                </div>
-                <div className="text-2xl font-semibold text-gray-700 mb-4">
-                  {percentage}%
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-4">
-                  <div 
-                    className={`h-4 rounded-full transition-all duration-1000 ${
-                      percentage >= 70 ? 'bg-green-500' : 
-                      percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                    }`}
-                    style={{ width: `${percentage}%` }}
-                  ></div>
-                </div>
+            <div style={{
+              background: '#F8FAFC',
+              borderRadius: '20px',
+              padding: '20px',
+              maxWidth: '300px',
+              margin: '0 auto 20px'
+            }}>
+              <div style={{ fontSize: '36px', fontWeight: '700', color: '#F59E0B', marginBottom: '4px' }}>
+                {score}/{shuffledQuestions.length}
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: '600', color: '#0F172A', marginBottom: '12px' }}>
+                {percentage}%
+              </div>
+              <div style={{ width: '100%', background: '#E2E8F0', borderRadius: '9999px', height: '8px', overflow: 'hidden' }}>
+                <div style={{
+                  width: `${percentage}%`,
+                  background: getResultColor(),
+                  height: '100%',
+                  borderRadius: '9999px',
+                  transition: 'width 1s'
+                }}></div>
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4 mt-6 max-w-md mx-auto">
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button
                 onClick={handleRetry}
-                className="bg-orange-500 text-white py-3 rounded-xl hover:bg-orange-600 transition-colors font-semibold"
+                style={{
+                  padding: '12px 24px',
+                  background: '#F59E0B',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '16px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
               >
                 Try Again 🔄
               </button>
-              <Link
-                to="/topics/statistics"
-                className="bg-gray-500 text-white py-3 rounded-xl hover:bg-gray-600 transition-colors font-semibold text-center"
-              >
+              <Link to="/topics/statistics" style={{
+                padding: '12px 24px',
+                background: '#64748B',
+                color: 'white',
+                borderRadius: '16px',
+                textDecoration: 'none',
+                fontWeight: '600'
+              }}>
                 Back to Topics
               </Link>
             </div>
           </div>
 
           {/* Review Section */}
-          <div className="bg-white rounded-3xl shadow-2xl p-8">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+          <div style={{
+            background: 'white',
+            borderRadius: '32px',
+            padding: isMobile ? '20px' : '28px',
+            border: '1px solid #E2E8F0'
+          }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#0F172A', marginBottom: '20px', textAlign: 'center' }}>
               Review Your Answers
             </h3>
-            <div className="space-y-6">
-              {shuffledQuestions.map((question, index) => (
-                <div
-                  key={index}
-                  className={`p-6 rounded-2xl border-2 ${
-                    userAnswers[index] === question.correctAnswer
-                      ? 'bg-green-50 border-green-200'
-                      : 'bg-red-50 border-red-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="font-bold text-lg">Question {index + 1}</span>
-                    <span className={`px-3 py-1 rounded-full font-semibold ${
-                      userAnswers[index] === question.correctAnswer
-                        ? 'bg-green-500 text-white'
-                        : 'bg-red-500 text-white'
-                    }`}>
-                      {userAnswers[index] === question.correctAnswer ? 'Correct' : 'Incorrect'}
-                    </span>
-                  </div>
-                  
-                  <p className="text-lg font-medium text-gray-800 mb-4">
-                    {question.question}
-                  </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {shuffledQuestions.map((question, index) => {
+                const isCorrect = userAnswers[index] === question.correctAnswer
+                return (
+                  <div key={index} style={{
+                    padding: '20px',
+                    borderRadius: '20px',
+                    background: isCorrect ? '#DCFCE7' : '#FEE2E2',
+                    border: `1px solid ${isCorrect ? '#86EFAC' : '#FECACA'}`
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                      <span style={{ fontWeight: '700', fontSize: '14px' }}>Question {index + 1}</span>
+                      <span style={{
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '11px',
+                        fontWeight: '500',
+                        background: isCorrect ? '#10B981' : '#EF4444',
+                        color: 'white'
+                      }}>
+                        {isCorrect ? 'Correct' : 'Incorrect'}
+                      </span>
+                    </div>
+                    
+                    <p style={{ fontSize: '16px', fontWeight: '500', color: '#0F172A', marginBottom: '16px' }}>
+                      {question.question}
+                    </p>
 
-                  <div className="mb-4">
-                    <p className="font-semibold text-gray-700 mb-2">Your answer:</p>
-                    <div className={`p-3 rounded-lg ${
-                      userAnswers[index] === question.correctAnswer
-                        ? 'bg-green-100 border border-green-300'
-                        : 'bg-red-100 border border-red-300'
-                    }`}>
-                      {userAnswers[index] !== undefined ? (
-                        <span className="font-medium">
-                          {question.options[userAnswers[index]]}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">Not answered</span>
+                    <div style={{ marginBottom: '16px' }}>
+                      <p style={{ fontWeight: '600', color: '#475569', marginBottom: '8px', fontSize: '13px' }}>Your answer:</p>
+                      <div style={{
+                        padding: '12px',
+                        borderRadius: '12px',
+                        background: isCorrect ? '#D1FAE5' : '#FEE2E2',
+                        border: `1px solid ${isCorrect ? '#10B981' : '#EF4444'}`
+                      }}>
+                        {userAnswers[index] !== undefined ? question.options[userAnswers[index]] : 'Not answered'}
+                      </div>
+                    </div>
+
+                    {!isCorrect && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <p style={{ fontWeight: '600', color: '#10B981', marginBottom: '8px', fontSize: '13px' }}>Correct answer:</p>
+                        <div style={{
+                          padding: '12px',
+                          borderRadius: '12px',
+                          background: '#D1FAE5',
+                          border: '1px solid #10B981'
+                        }}>
+                          {question.options[question.correctAnswer]}
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <button
+                        onClick={() => {
+                          if (showExplanation === index) {
+                            setShowExplanation(null)
+                            stopSpeech()
+                          } else {
+                            setShowExplanation(index)
+                            speakText(question.explanation)
+                          }
+                        }}
+                        style={{
+                          padding: '8px 16px',
+                          background: '#F59E0B',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '12px',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          marginBottom: '12px'
+                        }}
+                      >
+                        {showExplanation === index ? 'Hide Solution' : 'Show Step-by-Step Solution'}
+                      </button>
+                      
+                      {showExplanation === index && (
+                        <div style={{
+                          background: '#FEF3C7',
+                          borderRadius: '16px',
+                          padding: '16px',
+                          border: '1px solid #FDE68A'
+                        }}>
+                          <h4 style={{ fontWeight: '700', color: '#92400E', marginBottom: '12px' }}>Step-by-Step Solution:</h4>
+                          <pre style={{
+                            margin: 0,
+                            fontSize: '13px',
+                            color: '#92400E',
+                            whiteSpace: 'pre-wrap',
+                            fontFamily: 'inherit',
+                            lineHeight: '1.6'
+                          }}>
+                            {question.explanation}
+                          </pre>
+                        </div>
                       )}
                     </div>
                   </div>
-
-                  {userAnswers[index] !== question.correctAnswer && (
-                    <div className="mb-4">
-                      <p className="font-semibold text-green-700 mb-2">Correct answer:</p>
-                      <div className="p-3 bg-green-100 rounded-lg border border-green-300">
-                        <span className="font-medium">
-                          {question.options[question.correctAnswer]}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <button
-                      onClick={() => setShowExplanation(showExplanation === index ? null : index)}
-                      className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-semibold mb-3"
-                    >
-                      {showExplanation === index ? 'Hide Solution' : 'Show Step-by-Step Solution'}
-                    </button>
-                    
-                    {showExplanation === index && (
-                      <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
-                        <h4 className="font-bold text-yellow-800 mb-3 text-lg">Step-by-Step Solution:</h4>
-                        <pre className="text-yellow-800 whitespace-pre-wrap font-sans text-sm leading-relaxed">
-                          {question.explanation}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </div>
@@ -704,27 +553,70 @@ C(n,k)p^k(1-p)^(n-k)`
     )
   }
 
+  const currentQ = shuffledQuestions[currentQuestion]
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 p-4">
-      <div className="max-w-4xl mx-auto">
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #F1F5F9 100%)',
+      padding: isMobile ? '16px' : '20px'
+    }}>
+      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
         
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 mb-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
+        <div style={{
+          background: 'white',
+          borderRadius: '20px',
+          padding: '16px',
+          marginBottom: '20px',
+          border: '1px solid #E2E8F0'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">Statistics Quiz</h1>
-              <p className="text-gray-600 text-sm">
+              <h1 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A' }}>Statistics Quiz</h1>
+              <p style={{ fontSize: '13px', color: '#64748B' }}>
                 Question {currentQuestion + 1} of {shuffledQuestions.length}
               </p>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="bg-red-100 text-red-600 px-3 py-1 rounded-full font-semibold">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                background: '#FEE2E2',
+                padding: '6px 12px',
+                borderRadius: '20px',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: '#DC2626'
+              }}>
                 ⏱️ {formatTime(timeLeft)}
               </div>
               <button
+                onClick={readQuestion}
+                style={{
+                  padding: '6px 12px',
+                  background: '#FEF3C7',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  color: '#D97706',
+                  fontWeight: '500'
+                }}
+              >
+                🔊 Read Question
+              </button>
+              <button
                 onClick={handleSubmit}
-                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-semibold"
+                style={{
+                  padding: '8px 16px',
+                  background: '#10B981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '13px'
+                }}
               >
                 Submit Quiz
               </button>
@@ -732,116 +624,155 @@ C(n,k)p^k(1-p)^(n-k)`
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-            <div 
-              className="bg-orange-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${((currentQuestion + 1) / shuffledQuestions.length) * 100}%` }}
-            ></div>
+          <div style={{ width: '100%', background: '#E2E8F0', borderRadius: '9999px', height: '6px', marginTop: '12px' }}>
+            <div style={{
+              width: `${((currentQuestion + 1) / shuffledQuestions.length) * 100}%`,
+              background: 'linear-gradient(90deg, #F59E0B, #D97706)',
+              height: '100%',
+              borderRadius: '9999px',
+              transition: 'width 0.3s'
+            }}></div>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-4 gap-6">
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '20px' }}>
           
           {/* Question Section */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              {shuffledQuestions.length > 0 && (
-                <>
-                  <h2 className="text-xl font-bold text-gray-800 mb-6">
-                    {shuffledQuestions[currentQuestion].question}
-                  </h2>
+          <div style={{ flex: 3 }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '24px',
+              padding: isMobile ? '20px' : '28px',
+              border: '1px solid #E2E8F0'
+            }}>
+              <h2 style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: '#0F172A', marginBottom: '24px' }}>
+                {currentQ?.question}
+              </h2>
 
-                  <div className="space-y-3">
-                    {shuffledQuestions[currentQuestion].options.map((option, optionIndex) => (
-                      <button
-                        key={optionIndex}
-                        onClick={() => handleAnswerSelect(currentQuestion, optionIndex)}
-                        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                          userAnswers[currentQuestion] === optionIndex
-                            ? 'border-orange-500 bg-orange-50 text-orange-700'
-                            : 'border-gray-200 hover:border-orange-300 hover:bg-orange-25'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${
-                            userAnswers[currentQuestion] === optionIndex
-                              ? 'bg-orange-500 text-white'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {String.fromCharCode(65 + optionIndex)}
-                          </div>
-                          <span className="font-medium">{option}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {currentQ?.options.map((option, optionIndex) => (
+                  <button
+                    key={optionIndex}
+                    onClick={() => handleAnswerSelect(currentQuestion, optionIndex)}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '16px',
+                      borderRadius: '16px',
+                      border: `2px solid ${userAnswers[currentQuestion] === optionIndex ? '#F59E0B' : '#E2E8F0'}`,
+                      background: userAnswers[currentQuestion] === optionIndex ? '#FEF3C7' : 'white',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: '600',
+                        background: userAnswers[currentQuestion] === optionIndex ? '#F59E0B' : '#F1F5F9',
+                        color: userAnswers[currentQuestion] === optionIndex ? 'white' : '#64748B'
+                      }}>
+                        {String.fromCharCode(65 + optionIndex)}
+                      </div>
+                      <span style={{ fontSize: '15px', color: '#0F172A' }}>{option}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Navigation */}
-            <div className="flex justify-between mt-4">
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px', gap: '12px' }}>
               <button
                 onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
                 disabled={currentQuestion === 0}
-                className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all ${
-                  currentQuestion === 0
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-500 text-white hover:bg-gray-600'
-                }`}
+                style={{
+                  padding: '12px 20px',
+                  background: currentQuestion === 0 ? '#F1F5F9' : 'white',
+                  color: currentQuestion === 0 ? '#94A3B8' : '#64748B',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '14px',
+                  cursor: currentQuestion === 0 ? 'not-allowed' : 'pointer',
+                  fontWeight: '500'
+                }}
               >
-                <span>←</span>
-                <span>Previous</span>
+                ← Previous
               </button>
 
               <button
                 onClick={() => setCurrentQuestion(prev => Math.min(shuffledQuestions.length - 1, prev + 1))}
                 disabled={currentQuestion === shuffledQuestions.length - 1}
-                className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all ${
-                  currentQuestion === shuffledQuestions.length - 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-orange-500 text-white hover:bg-orange-600'
-                }`}
+                style={{
+                  padding: '12px 20px',
+                  background: currentQuestion === shuffledQuestions.length - 1 ? '#F1F5F9' : 'linear-gradient(135deg, #F59E0B, #D97706)',
+                  color: currentQuestion === shuffledQuestions.length - 1 ? '#94A3B8' : 'white',
+                  border: 'none',
+                  borderRadius: '14px',
+                  cursor: currentQuestion === shuffledQuestions.length - 1 ? 'not-allowed' : 'pointer',
+                  fontWeight: '500'
+                }}
               >
-                <span>Next</span>
-                <span>→</span>
+                Next →
               </button>
             </div>
           </div>
 
           {/* Question Navigator */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg p-4 sticky top-4">
-              <h3 className="font-semibold text-gray-800 mb-3">Questions</h3>
-              <div className="grid grid-cols-5 gap-2">
+          <div style={{ flex: 1 }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '20px',
+              padding: '16px',
+              border: '1px solid #E2E8F0',
+              position: 'sticky',
+              top: '20px'
+            }}>
+              <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#0F172A', marginBottom: '12px' }}>Questions</h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(5, 1fr)',
+                gap: '8px'
+              }}>
                 {shuffledQuestions.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentQuestion(index)}
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${
-                      currentQuestion === index
-                        ? 'bg-orange-500 text-white shadow-md'
-                        : userAnswers[index] !== undefined
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      background: currentQuestion === index ? '#F59E0B' : userAnswers[index] !== undefined ? '#10B981' : '#F1F5F9',
+                      color: currentQuestion === index || userAnswers[index] !== undefined ? 'white' : '#64748B',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
                   >
                     {index + 1}
                   </button>
                 ))}
               </div>
               
-              <div className="mt-4 space-y-2 text-xs">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-orange-500 rounded"></div>
+              <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                  <div style={{ width: '12px', height: '12px', background: '#F59E0B', borderRadius: '3px' }}></div>
                   <span>Current</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-green-500 rounded"></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                  <div style={{ width: '12px', height: '12px', background: '#10B981', borderRadius: '3px' }}></div>
                   <span>Answered</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-gray-100 rounded"></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                  <div style={{ width: '12px', height: '12px', background: '#F1F5F9', borderRadius: '3px', border: '1px solid #E2E8F0' }}></div>
                   <span>Unanswered</span>
                 </div>
               </div>
