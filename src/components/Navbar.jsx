@@ -7,7 +7,7 @@ export default function Navbar({ user, onLogout }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
-  // Handle scroll effect
+  // Handle scroll effect - hooks must be called before any conditional returns
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10)
@@ -16,7 +16,13 @@ export default function Navbar({ user, onLogout }) {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Don't show navbar on splash and auth pages
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+    document.body.style.overflow = 'unset'
+  }, [location])
+
+  // Don't show navbar on splash and auth pages - this is fine AFTER hooks
   if (location.pathname === '/splash' || location.pathname === '/auth') {
     return null
   }
@@ -53,12 +59,6 @@ export default function Navbar({ user, onLogout }) {
       document.body.style.overflow = 'unset'
     }
   }
-
-  // Close mobile menu when route changes
-  useEffect(() => {
-    setIsMobileMenuOpen(false)
-    document.body.style.overflow = 'unset'
-  }, [location])
 
   return (
     <>

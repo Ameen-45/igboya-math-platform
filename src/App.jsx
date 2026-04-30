@@ -8,7 +8,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Load user from localStorage
     const loadUser = () => {
       const storedUser = localStorage.getItem("user")
       if (storedUser) {
@@ -19,7 +18,6 @@ function App() {
     
     loadUser()
     
-    // Listen for storage changes
     const handleStorageChange = () => {
       const updatedUser = localStorage.getItem("user")
       if (updatedUser) {
@@ -37,7 +35,6 @@ function App() {
     setUser(null)
   }
 
-  // Show loading spinner while checking auth
   if (isLoading) {
     return (
       <div style={{
@@ -45,7 +42,9 @@ function App() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)'
+        background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)',
+        margin: 0,
+        padding: 0
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{
@@ -71,7 +70,7 @@ function App() {
   )
 }
 
-// Add spin animation style
+// Add spin animation
 const style = document.createElement('style')
 style.textContent = `
   @keyframes spin {
