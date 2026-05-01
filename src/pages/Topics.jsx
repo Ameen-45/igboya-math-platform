@@ -71,14 +71,18 @@ export default function Topics() {
     }
   ];
 
+  // MPT Document for download
+  const mptDocument = {
+    title: "MPT - General Mathematics",
+    description: "Past questions and answers for Mathematics Proficiency Test",
+    file: `${import.meta.env.BASE_URL}revision/MPT.pdf`,
+    size: "2.4 MB",
+    icon: "📘",
+    details: "Contains 50 practice questions with detailed solutions covering all topics"
+  };
+
+  // Additional revision materials
   const revisionMaterials = [
-    {
-      title: "MPT – General Mathematics",
-      description: "Comprehensive practice questions with solutions",
-      file: `${import.meta.env.BASE_URL}revision/MPT.pdf`,
-      size: "2.4 MB",
-      icon: "📘"
-    },
     {
       title: "Quick Reference Formula Sheet",
       description: "Essential formulas and theorems",
@@ -271,7 +275,6 @@ export default function Topics() {
                   {topic.description}
                 </p>
 
-                {/* Topic Stats */}
                 <div style={{
                   display: 'flex',
                   gap: '16px',
@@ -290,7 +293,6 @@ export default function Topics() {
                   </div>
                 </div>
 
-                {/* Progress Bar */}
                 <div style={{
                   width: '100%',
                   background: '#E2E8F0',
@@ -335,7 +337,84 @@ export default function Topics() {
           ))}
         </div>
 
-        {/* Revision Center */}
+        {/* MPT Revision Center - Featured Download */}
+        <div style={{
+          background: 'linear-gradient(135deg, #EEF2FF, #E0E7FF)',
+          borderRadius: '24px',
+          padding: isMobile ? '20px' : '28px',
+          border: '1px solid #C7D2FE',
+          marginBottom: '24px'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: 'center',
+            gap: '20px',
+            textAlign: isMobile ? 'center' : 'left'
+          }}>
+            <div style={{
+              width: isMobile ? '70px' : '80px',
+              height: isMobile ? '70px' : '80px',
+              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+              borderRadius: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: isMobile ? '32px' : '36px',
+              flexShrink: 0
+            }}>
+              📘
+            </div>
+            <div style={{ flex: 1 }}>
+              <h2 style={{
+                fontSize: isMobile ? '20px' : '24px',
+                fontWeight: '700',
+                color: '#1E3A8A',
+                marginBottom: '8px'
+              }}>
+                {mptDocument.title}
+              </h2>
+              <p style={{
+                fontSize: '13px',
+                color: '#1E40AF',
+                marginBottom: '8px'
+              }}>
+                {mptDocument.description}
+              </p>
+              <p style={{
+                fontSize: '11px',
+                color: '#6366F1',
+                marginBottom: '16px'
+              }}>
+                📄 {mptDocument.size} • PDF • {mptDocument.details}
+              </p>
+              <a
+                href={mptDocument.file}
+                download
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                  color: 'white',
+                  textDecoration: 'none',
+                  borderRadius: '14px',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  transition: 'transform 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <span>📥</span>
+                Download MPT PDF
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Additional Revision Materials */}
         <div style={{
           background: 'white',
           borderRadius: '24px',
@@ -354,21 +433,21 @@ export default function Topics() {
               fontSize: isMobile ? '24px' : '28px',
               margin: '0 auto 12px'
             }}>
-              🔄
+              📚
             </div>
             <h2 style={{
-              fontSize: isMobile ? '20px' : '24px',
+              fontSize: isMobile ? '18px' : '20px',
               fontWeight: '700',
               color: '#0F172A',
               marginBottom: '8px'
             }}>
-              General Revision Center
+              Additional Resources
             </h2>
             <p style={{
               fontSize: '13px',
               color: '#64748B'
             }}>
-              Download practice materials and prepare for exams
+              More study materials to help you prepare
             </p>
           </div>
 
