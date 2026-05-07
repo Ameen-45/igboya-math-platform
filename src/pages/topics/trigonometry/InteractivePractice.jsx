@@ -1,6 +1,93 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 
+// Triangle Visualizer Component
+function TriangleVisualizer({ type = 'right', angle = 30, opposite = 5, adjacent = 8.66, hypotenuse = 10, unknown = null }) {
+  const width = 350;
+  const height = 280;
+  const padding = 50;
+  
+  const startX = padding;
+  const startY = height - padding;
+  const endX = startX + (adjacent / hypotenuse) * (width - 2 * padding);
+  const endY = startY;
+  const peakX = startX + (opposite / hypotenuse) * (width - 2 * padding);
+  const peakY = startY - (opposite / adjacent) * (height - 2 * padding);
+  
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #F8FAFC, #F1F5F9)',
+      borderRadius: '20px',
+      padding: '20px',
+      textAlign: 'center',
+      border: '1px solid #E2E8F0',
+      marginBottom: '20px'
+    }}>
+      <svg width="100%" height="240" viewBox={`0 0 ${width} ${height}`} style={{ maxWidth: '450px', margin: '0 auto' }}>
+        <polygon 
+          points={`${startX},${startY} ${endX},${endY} ${peakX},${peakY}`} 
+          fill="#FEE2E2" 
+          stroke="#EF4444" 
+          strokeWidth="2.5"
+        />
+        
+        {type === 'right' && (
+          <polyline
+            points={`${endX - 25},${endY} ${endX - 25},${endY - 25} ${endX},${endY - 25}`}
+            fill="none"
+            stroke="#EF4444"
+            strokeWidth="2"
+          />
+        )}
+        
+        <path
+          d={`M ${startX + 30} ${startY - 5} A 30 30 0 0 1 ${startX + 25} ${startY - 25}`}
+          fill="none"
+          stroke="#F59E0B"
+          strokeWidth="2.5"
+        />
+        
+        <text x={startX + 35} y={startY - 20} fill="#F59E0B" fontSize="16" fontWeight="bold">
+          {typeof angle === 'number' ? `${angle}°` : 'θ'}
+        </text>
+        
+        <text x={(startX + peakX) / 2 - 25} y={(startY + peakY) / 2 - 5} fill={unknown === 'opposite' ? '#EF4444' : '#10B981'} fontSize="12" fontWeight="bold">
+          Opposite {unknown === 'opposite' && '= ?'} ({typeof opposite === 'number' ? opposite : '?'})
+        </text>
+        
+        <text x={(startX + endX) / 2} y={startY + 20} fill={unknown === 'adjacent' ? '#EF4444' : '#3B82F6'} fontSize="12" fontWeight="bold">
+          Adjacent ({adjacent})
+        </text>
+        
+        <text x={(endX + peakX) / 2 + 10} y={(endY + peakY) / 2 - 15} fill={unknown === 'hypotenuse' ? '#EF4444' : '#8B5CF6'} fontSize="12" fontWeight="bold">
+          Hypotenuse ({hypotenuse})
+        </text>
+      </svg>
+      
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(3, 1fr)', 
+        gap: '12px',
+        marginTop: '8px',
+        fontSize: '12px'
+      }}>
+        <div style={{ background: '#FEF3C7', padding: '6px', borderRadius: '8px' }}>
+          <span style={{ color: '#F59E0B', fontWeight: 'bold' }}>∠θ = {typeof angle === 'number' ? `${angle}°` : '?'}</span>
+        </div>
+        <div style={{ background: '#D1FAE5', padding: '6px', borderRadius: '8px' }}>
+          <span style={{ color: '#10B981', fontWeight: 'bold' }}>Opposite = {opposite}</span>
+        </div>
+        <div style={{ background: '#DBEAFE', padding: '6px', borderRadius: '8px' }}>
+          <span style={{ color: '#3B82F6', fontWeight: 'bold' }}>Adjacent = {adjacent}</span>
+        </div>
+        <div style={{ background: '#EDE9FE', padding: '6px', borderRadius: '8px' }}>
+          <span style={{ color: '#8B5CF6', fontWeight: 'bold' }}>Hypotenuse = {hypotenuse}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TrigonometryInteractivePractice() {
   const [currentProblem, setCurrentProblem] = useState(0)
   const [userAnswer, setUserAnswer] = useState('')
@@ -37,7 +124,8 @@ export default function TrigonometryInteractivePractice() {
       answer: "5",
       unit: "cm",
       explanation: "The opposite side is approximately 5 cm. Using sine ratio: sin(22.6°) = 0.3846, times 13 equals 5.",
-      voiceText: "Problem 1. In a right triangle, hypotenuse is 13 centimeters, angle is 22.6 degrees. Find the opposite side."
+      voiceText: "Problem 1. In a right triangle, hypotenuse is 13 centimeters, angle is 22.6 degrees. Find the opposite side.",
+      triangleData: { type: 'right', angle: 22.6, opposite: '?', adjacent: 12, hypotenuse: 13, unknown: 'opposite' }
     },
     {
       id: 2,
@@ -54,7 +142,8 @@ export default function TrigonometryInteractivePractice() {
       answer: "28.87",
       unit: "meters",
       explanation: "The tree is 28.87 meters tall. Using tangent: tan(30°) = 0.5774 × 50 = 28.87.",
-      voiceText: "Problem 2. Angle of elevation problem. Person is 50 meters from a tree, angle is 30 degrees. Find tree height."
+      voiceText: "Problem 2. Angle of elevation problem. Person is 50 meters from a tree, angle is 30 degrees. Find tree height.",
+      triangleData: { type: 'right', angle: 30, opposite: '?', adjacent: 50, hypotenuse: 57.74, unknown: 'opposite' }
     },
     {
       id: 3,
@@ -71,7 +160,8 @@ export default function TrigonometryInteractivePractice() {
       answer: "10.78",
       unit: "cm",
       explanation: "Side b is 10.78 cm. Using sine rule: (8 × sin60°)/sin40° = 6.928/0.6428 = 10.78.",
-      voiceText: "Problem 3. Sine rule application. Angle A is 40 degrees, angle B is 60 degrees, side a is 8 centimeters. Find side b."
+      voiceText: "Problem 3. Sine rule application. Angle A is 40 degrees, angle B is 60 degrees, side a is 8 centimeters. Find side b.",
+      triangleData: { type: 'sine', angleA: 40, angleB: 60, sideA: 8, sideB: '?' }
     },
     {
       id: 4,
@@ -88,7 +178,8 @@ export default function TrigonometryInteractivePractice() {
       answer: "7.00",
       unit: "cm",
       explanation: "Side a is 7.00 cm. Using cosine rule: a² = 49 + 81 - 126×0.6428 = 49.01, a = 7.00.",
-      voiceText: "Problem 4. Cosine rule application. Sides b and c are 7 and 9 centimeters, angle A is 50 degrees. Find side a."
+      voiceText: "Problem 4. Cosine rule application. Sides b and c are 7 and 9 centimeters, angle A is 50 degrees. Find side a.",
+      triangleData: { type: 'cosine', sideB: 7, sideC: 9, angleA: 50, sideA: '?' }
     },
     {
       id: 5,
@@ -106,7 +197,8 @@ export default function TrigonometryInteractivePractice() {
       alternativeAnswers: ["cos=4/5, tan=3/4", "0.8,0.75"],
       unit: "",
       explanation: "cosθ = 4/5 = 0.8, tanθ = 3/4 = 0.75. Using Pythagorean identity.",
-      voiceText: "Problem 5. If sine theta equals 3/5 in first quadrant, find cosine and tangent theta."
+      voiceText: "Problem 5. If sine theta equals 3/5 in first quadrant, find cosine and tangent theta.",
+      triangleData: null
     },
     {
       id: 6,
@@ -123,7 +215,8 @@ export default function TrigonometryInteractivePractice() {
       answer: "34.64",
       unit: "cm²",
       explanation: "Area is 34.64 cm². Using formula: ½ × 8 × 10 × sin60° = 40 × 0.8660 = 34.64.",
-      voiceText: "Problem 6. Find area of triangle with sides 8 and 10 centimeters, included angle 60 degrees."
+      voiceText: "Problem 6. Find area of triangle with sides 8 and 10 centimeters, included angle 60 degrees.",
+      triangleData: { type: 'area', sideA: 8, sideB: 10, angleC: 60 }
     }
   ]
 
@@ -175,7 +268,6 @@ export default function TrigonometryInteractivePractice() {
     let normalizedUserAnswer = userAnswer.trim().toLowerCase().replace(/\s/g, '')
     let normalizedCorrectAnswer = current.answer.toLowerCase().replace(/\s/g, '')
     
-    // Handle answers with commas
     if (normalizedCorrectAnswer.includes(',')) {
       const correctParts = normalizedCorrectAnswer.split(',').map(p => p.trim())
       const isAnswerCorrect = correctParts.some(part => normalizedUserAnswer === part)
@@ -192,7 +284,6 @@ export default function TrigonometryInteractivePractice() {
       return
     }
     
-    // Handle alternative answers
     if (current.alternativeAnswers) {
       const allAnswers = [normalizedCorrectAnswer, ...current.alternativeAnswers.map(a => a.toLowerCase().replace(/\s/g, ''))]
       const isAnswerCorrect = allAnswers.some(a => normalizedUserAnswer === a)
@@ -276,7 +367,6 @@ export default function TrigonometryInteractivePractice() {
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
-        {/* Celebration Animation */}
         {showCelebration && (
           <div style={{
             position: 'fixed',
@@ -390,6 +480,11 @@ export default function TrigonometryInteractivePractice() {
                   <span>{isPlaying ? 'Playing...' : 'Read Problem'}</span>
                 </button>
               </div>
+
+              {/* Triangle Visualization */}
+              {currentProblemData.triangleData && (
+                <TriangleVisualizer {...currentProblemData.triangleData} />
+              )}
 
               {/* Problem Display */}
               <div style={{
@@ -693,7 +788,6 @@ export default function TrigonometryInteractivePractice() {
 
           {/* Sidebar */}
           <div style={{ flex: 1 }}>
-            {/* Recent Activity */}
             <div style={{
               background: 'white',
               borderRadius: '20px',
@@ -745,7 +839,6 @@ export default function TrigonometryInteractivePractice() {
               </div>
             </div>
 
-            {/* Quick Tips */}
             <div style={{
               background: 'linear-gradient(135deg, #EF4444, #DC2626)',
               borderRadius: '20px',

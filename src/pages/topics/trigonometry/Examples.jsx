@@ -1,6 +1,135 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 
+// Triangle Visualizer Component
+function TriangleVisualizer({ angle = 30, opposite = 5, adjacent = 8.66, hypotenuse = 10, showLabels = true, type = 'right', unknown = null }) {
+  const width = 350;
+  const height = 280;
+  const padding = 50;
+  
+  // Calculate triangle points
+  const startX = padding;
+  const startY = height - padding;
+  const endX = startX + (adjacent / hypotenuse) * (width - 2 * padding);
+  const endY = startY;
+  const peakX = startX + (opposite / hypotenuse) * (width - 2 * padding);
+  const peakY = startY - (opposite / adjacent) * (height - 2 * padding);
+  
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #F8FAFC, #F1F5F9)',
+      borderRadius: '20px',
+      padding: '20px',
+      textAlign: 'center',
+      border: '1px solid #E2E8F0',
+      marginBottom: '20px'
+    }}>
+      <svg width="100%" height="240" viewBox={`0 0 ${width} ${height}`} style={{ maxWidth: '450px', margin: '0 auto' }}>
+        {/* Triangle */}
+        <polygon 
+          points={`${startX},${startY} ${endX},${endY} ${peakX},${peakY}`} 
+          fill="#FEE2E2" 
+          stroke="#EF4444" 
+          strokeWidth="2.5"
+        />
+        
+        {/* Right angle marker */}
+        {type === 'right' && (
+          <polyline
+            points={`${endX - 25},${endY} ${endX - 25},${endY - 25} ${endX},${endY - 25}`}
+            fill="none"
+            stroke="#EF4444"
+            strokeWidth="2"
+          />
+        )}
+        
+        {/* Angle arc */}
+        <path
+          d={`M ${startX + 30} ${startY - 5} A 30 30 0 0 1 ${startX + 25} ${startY - 25}`}
+          fill="none"
+          stroke="#F59E0B"
+          strokeWidth="2.5"
+        />
+        
+        {/* Angle label */}
+        <text x={startX + 35} y={startY - 20} fill="#F59E0B" fontSize="16" fontWeight="bold">
+          θ
+        </text>
+        
+        {/* Side labels */}
+        {showLabels && (
+          <>
+            <text x={(startX + peakX) / 2 - 25} y={(startY + peakY) / 2 - 5} fill={unknown === 'opposite' ? '#EF4444' : '#10B981'} fontSize="12" fontWeight="bold">
+              Opposite {unknown === 'opposite' && '= ?'} ({opposite})
+            </text>
+            
+            <text x={(startX + endX) / 2} y={startY + 20} fill={unknown === 'adjacent' ? '#EF4444' : '#3B82F6'} fontSize="12" fontWeight="bold">
+              Adjacent ({adjacent})
+            </text>
+            
+            <text x={(endX + peakX) / 2 + 10} y={(endY + peakY) / 2 - 15} fill={unknown === 'hypotenuse' ? '#EF4444' : '#8B5CF6'} fontSize="12" fontWeight="bold">
+              Hypotenuse ({hypotenuse})
+            </text>
+          </>
+        )}
+      </svg>
+      
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(3, 1fr)', 
+        gap: '12px',
+        marginTop: '8px',
+        fontSize: '12px'
+      }}>
+        <div style={{ background: '#FEF3C7', padding: '6px', borderRadius: '8px' }}>
+          <span style={{ color: '#F59E0B', fontWeight: 'bold' }}>∠θ = {angle}°</span>
+        </div>
+        <div style={{ background: '#D1FAE5', padding: '6px', borderRadius: '8px' }}>
+          <span style={{ color: '#10B981', fontWeight: 'bold' }}>Opposite = {opposite}</span>
+        </div>
+        <div style={{ background: '#DBEAFE', padding: '6px', borderRadius: '8px' }}>
+          <span style={{ color: '#3B82F6', fontWeight: 'bold' }}>Adjacent = {adjacent}</span>
+        </div>
+        <div style={{ background: '#EDE9FE', padding: '6px', borderRadius: '8px' }}>
+          <span style={{ color: '#8B5CF6', fontWeight: 'bold' }}>Hypotenuse = {hypotenuse}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// SOH-CAH-TOA Helper Component
+function SOHCAHTOAHelper({ activeRatio = 'sin' }) {
+  const ratios = {
+    sin: { formula: 'sin(θ) = Opposite / Hypotenuse', color: '#10B981', example: 'sin(θ) = O/H' },
+    cos: { formula: 'cos(θ) = Adjacent / Hypotenuse', color: '#3B82F6', example: 'cos(θ) = A/H' },
+    tan: { formula: 'tan(θ) = Opposite / Adjacent', color: '#F59E0B', example: 'tan(θ) = O/A' }
+  };
+  
+  return (
+    <div style={{
+      background: '#F8FAFC',
+      borderRadius: '16px',
+      padding: '16px',
+      marginBottom: '20px',
+      border: '1px solid #E2E8F0'
+    }}>
+      <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+        <span style={{ fontSize: '14px', color: '#64748B' }}>Using</span>
+        <span style={{ fontSize: '18px', fontWeight: '700', color: ratios[activeRatio].color, marginLeft: '8px' }}>
+          {activeRatio.toUpperCase()}
+        </span>
+      </div>
+      <div style={{ fontSize: '16px', fontWeight: '600', textAlign: 'center', color: ratios[activeRatio].color }}>
+        {ratios[activeRatio].formula}
+      </div>
+      <div style={{ fontSize: '12px', textAlign: 'center', color: '#94A3B8', marginTop: '8px' }}>
+        {ratios[activeRatio].example}
+      </div>
+    </div>
+  );
+}
+
 export default function TrigonometryExamples() {
   const [currentExample, setCurrentExample] = useState(0)
   const [currentStep, setCurrentStep] = useState(0)
@@ -26,32 +155,37 @@ export default function TrigonometryExamples() {
       equation: "Find side length in right triangle",
       problem: "In a right triangle, hypotenuse = 10, angle = 30°. Find opposite side.",
       voiceText: "Example 1: Basic Right Triangle. Find the opposite side.",
+      triangleData: { angle: 30, opposite: '?', adjacent: 8.66, hypotenuse: 10, unknown: 'opposite' },
       steps: [
         {
           title: "Step 1: Identify Known Values",
           content: "We have a right triangle with:\n- Hypotenuse = 10\n- Angle θ = 30°\n- Need to find: Opposite side",
           explanation: "We'll use the sine ratio since we have hypotenuse and need opposite side.",
-          voiceText: "Step 1. Identify known values. Hypotenuse is 10, angle is 30 degrees. Need to find opposite side."
+          voiceText: "Step 1. Identify known values. Hypotenuse is 10, angle is 30 degrees. Need to find opposite side.",
+          ratio: 'sin'
         },
         {
           title: "Step 2: Choose Correct Ratio",
           content: "Recall SOH-CAH-TOA:\nSine = Opposite/Hypotenuse",
           explanation: "Since we need opposite side and have hypotenuse, we use sine.",
-          voiceText: "Step 2. Choose correct ratio. Using SOH-CAH-TOA, sine equals opposite over hypotenuse."
+          voiceText: "Step 2. Choose correct ratio. Using SOH-CAH-TOA, sine equals opposite over hypotenuse.",
+          ratio: 'sin'
         },
         {
           title: "Step 3: Set Up Equation",
           content: "Write the sine equation:",
           explanation: "sin(30°) = Opposite / 10",
           working: "sin(θ) = Opposite/Hypotenuse\nsin(30°) = Opposite/10",
-          voiceText: "Step 3. Set up equation. Sin of 30 degrees equals opposite over 10."
+          voiceText: "Step 3. Set up equation. Sin of 30 degrees equals opposite over 10.",
+          ratio: 'sin'
         },
         {
           title: "Step 4: Solve for Opposite",
           content: "Multiply both sides by 10:",
           explanation: "Opposite = 10 × sin(30°)",
           working: "Opposite = 10 × sin(30°)\nOpposite = 10 × 0.5\nOpposite = 5",
-          voiceText: "Step 4. Solve for opposite. Multiply both sides by 10. Opposite equals 10 times sin of 30 degrees, which is 10 times 0.5 equals 5."
+          voiceText: "Step 4. Solve for opposite. Multiply both sides by 10. Opposite equals 10 times sin of 30 degrees, which is 10 times 0.5 equals 5.",
+          ratio: 'sin'
         },
         {
           title: "Final Answer",
@@ -73,33 +207,38 @@ export default function TrigonometryExamples() {
       equation: "Find angle using inverse trig",
       problem: "In a right triangle, opposite = 6, hypotenuse = 10. Find angle θ.",
       voiceText: "Example 2. Finding Missing Angle. Find angle theta.",
+      triangleData: { angle: '?', opposite: 6, adjacent: 8, hypotenuse: 10, unknown: 'angle' },
       steps: [
         {
           title: "Step 1: Identify Known Values",
           content: "We have:\n- Opposite side = 6\n- Hypotenuse = 10\n- Need to find: Angle θ",
           explanation: "We'll use inverse sine since we have opposite and hypotenuse.",
-          voiceText: "Step 1. Identify known values. Opposite is 6, hypotenuse is 10. Need to find angle theta."
+          voiceText: "Step 1. Identify known values. Opposite is 6, hypotenuse is 10. Need to find angle theta.",
+          ratio: 'sin'
         },
         {
           title: "Step 2: Set Up Sine Ratio",
           content: "Write the sine equation:",
           explanation: "sin(θ) = Opposite/Hypotenuse = 6/10 = 0.6",
           working: "sin(θ) = 6/10 = 0.6",
-          voiceText: "Step 2. Set up sine ratio. Sin of theta equals opposite over hypotenuse equals 6 over 10 equals 0.6."
+          voiceText: "Step 2. Set up sine ratio. Sin of theta equals opposite over hypotenuse equals 6 over 10 equals 0.6.",
+          ratio: 'sin'
         },
         {
           title: "Step 3: Use Inverse Sine",
           content: "Apply inverse sine to both sides:",
           explanation: "θ = sin⁻¹(0.6)",
           working: "θ = sin⁻¹(0.6)",
-          voiceText: "Step 3. Use inverse sine. Theta equals inverse sine of 0.6."
+          voiceText: "Step 3. Use inverse sine. Theta equals inverse sine of 0.6.",
+          ratio: 'sin'
         },
         {
           title: "Step 4: Calculate Angle",
           content: "Use calculator or known value:",
           explanation: "θ ≈ 36.87°",
           working: "sin⁻¹(0.6) ≈ 36.87°",
-          voiceText: "Step 4. Calculate angle. Theta is approximately 36.87 degrees."
+          voiceText: "Step 4. Calculate angle. Theta is approximately 36.87 degrees.",
+          ratio: 'sin'
         },
         {
           title: "Final Answer",
@@ -116,132 +255,41 @@ export default function TrigonometryExamples() {
       ]
     },
     {
-      title: "Sine Rule Application",
-      type: "sine-rule",
-      equation: "a/sinA = b/sinB = c/sinC",
-      problem: "In triangle ABC, A=40°, B=60°, side a=8. Find side b.",
-      voiceText: "Example 3. Sine Rule Application. Find side b.",
-      steps: [
-        {
-          title: "Step 1: Write Sine Rule",
-          content: "The sine rule states:",
-          explanation: "a/sinA = b/sinB = c/sinC",
-          voiceText: "Step 1. Write sine rule. a over sin A equals b over sin B equals c over sin C."
-        },
-        {
-          title: "Step 2: Set Up Proportion",
-          content: "Use the given values:",
-          explanation: "8/sin(40°) = b/sin(60°)",
-          working: "a/sinA = b/sinB\n8/sin40° = b/sin60°",
-          voiceText: "Step 2. Set up proportion. 8 over sin 40 equals b over sin 60."
-        },
-        {
-          title: "Step 3: Cross Multiply",
-          content: "Solve for b:",
-          explanation: "b = (8 × sin(60°)) / sin(40°)",
-          working: "b = (8 × sin60°) / sin40°",
-          voiceText: "Step 3. Cross multiply. b equals 8 times sin 60 divided by sin 40."
-        },
-        {
-          title: "Step 4: Calculate Values",
-          content: "Use trigonometric values:",
-          explanation: "sin(60°) ≈ 0.866\nsin(40°) ≈ 0.643\nb ≈ (8 × 0.866) / 0.643 ≈ 10.78",
-          working: "b ≈ (8 × 0.866) / 0.643 ≈ 6.928 / 0.643 ≈ 10.78",
-          voiceText: "Step 4. Calculate values. sin 60 is 0.866, sin 40 is 0.643. b is approximately 10.78."
-        },
-        {
-          title: "Final Answer",
-          content: "Side b is approximately:",
-          explanation: "10.78 units",
-          voiceText: "Final answer. Side b is approximately 10.78 units.",
-          interactive: {
-            question: "What is the length of side b?",
-            answer: "10.78",
-            hint: "Use sine rule: a/sinA = b/sinB",
-            voiceText: "What is the length of side b?"
-          }
-        }
-      ]
-    },
-    {
-      title: "Cosine Rule Application",
-      type: "cosine-rule",
-      equation: "a² = b² + c² - 2bc·cosA",
-      problem: "In triangle ABC, sides b=7, c=9, angle A=50°. Find side a.",
-      voiceText: "Example 4. Cosine Rule Application. Find side a.",
-      steps: [
-        {
-          title: "Step 1: Write Cosine Rule",
-          content: "The cosine rule formula:",
-          explanation: "a² = b² + c² - 2bc·cosA",
-          voiceText: "Step 1. Write cosine rule. a squared equals b squared plus c squared minus 2 b c cos A."
-        },
-        {
-          title: "Step 2: Substitute Values",
-          content: "Plug in the known values:",
-          explanation: "a² = 7² + 9² - 2×7×9×cos(50°)",
-          working: "a² = 49 + 81 - 126×cos50°",
-          voiceText: "Step 2. Substitute values. a squared equals 49 plus 81 minus 126 times cos 50."
-        },
-        {
-          title: "Step 3: Calculate Components",
-          content: "Compute each part:",
-          explanation: "49 + 81 = 130\ncos(50°) ≈ 0.6428\n126 × 0.6428 ≈ 80.99",
-          working: "a² = 130 - 80.99",
-          voiceText: "Step 3. Calculate components. 49 plus 81 is 130. Cos 50 is 0.6428. 126 times 0.6428 is 80.99."
-        },
-        {
-          title: "Step 4: Solve for a",
-          content: "Complete the calculation:",
-          explanation: "a² ≈ 130 - 80.99 = 49.01\na ≈ √49.01 ≈ 7.00",
-          working: "a² ≈ 49.01\na ≈ √49.01 ≈ 7.00",
-          voiceText: "Step 4. Solve for a. a squared is approximately 49.01. a is approximately 7."
-        },
-        {
-          title: "Final Answer",
-          content: "Side a is approximately:",
-          explanation: "7.00 units",
-          voiceText: "Final answer. Side a is approximately 7 units.",
-          interactive: {
-            question: "What is the length of side a?",
-            answer: "7.00",
-            hint: "Use cosine rule: a² = b² + c² - 2bc·cosA",
-            voiceText: "What is the length of side a?"
-          }
-        }
-      ]
-    },
-    {
       title: "Angle of Elevation",
       type: "word-problem",
       problem: "A 20m ladder leans against a wall. The base is 5m from the wall. Find the angle with the ground.",
-      voiceText: "Example 5. Angle of Elevation. Find the angle.",
+      voiceText: "Example 3. Angle of Elevation. Find the angle.",
+      triangleData: { angle: '?', opposite: 19.36, adjacent: 5, hypotenuse: 20, unknown: 'angle' },
       steps: [
         {
           title: "Step 1: Visualize the Problem",
           content: "We have a right triangle:\n- Hypotenuse (ladder) = 20m\n- Adjacent (distance from wall) = 5m\n- Need: Angle with ground",
           explanation: "The angle we need is between the ladder and the ground.",
-          voiceText: "Step 1. Visualize the problem. Ladder is hypotenuse 20 meters. Distance from wall is adjacent 5 meters."
+          voiceText: "Step 1. Visualize the problem. Ladder is hypotenuse 20 meters. Distance from wall is adjacent 5 meters.",
+          ratio: 'cos'
         },
         {
           title: "Step 2: Choose Correct Ratio",
           content: "We have adjacent and hypotenuse, so use cosine:",
           explanation: "cos(θ) = Adjacent/Hypotenuse",
-          voiceText: "Step 2. Choose correct ratio. Use cosine equals adjacent over hypotenuse."
+          voiceText: "Step 2. Choose correct ratio. Use cosine equals adjacent over hypotenuse.",
+          ratio: 'cos'
         },
         {
           title: "Step 3: Set Up Equation",
           content: "Write the cosine equation:",
           explanation: "cos(θ) = 5/20 = 0.25",
           working: "cos(θ) = Adjacent/Hypotenuse = 5/20 = 0.25",
-          voiceText: "Step 3. Set up equation. Cos theta equals 5 over 20 equals 0.25."
+          voiceText: "Step 3. Set up equation. Cos theta equals 5 over 20 equals 0.25.",
+          ratio: 'cos'
         },
         {
           title: "Step 4: Find Angle",
           content: "Use inverse cosine:",
           explanation: "θ = cos⁻¹(0.25) ≈ 75.52°",
           working: "θ = cos⁻¹(0.25) ≈ 75.52°",
-          voiceText: "Step 4. Find angle. Theta equals inverse cosine of 0.25, approximately 75.52 degrees."
+          voiceText: "Step 4. Find angle. Theta equals inverse cosine of 0.25, approximately 75.52 degrees.",
+          ratio: 'cos'
         },
         {
           title: "Final Answer",
@@ -498,6 +546,22 @@ export default function TrigonometryExamples() {
                   <span>{isPlaying ? 'Playing...' : 'Listen'}</span>
                 </button>
               </div>
+
+              {/* Triangle Visualization */}
+              {currentExampleData.triangleData && (
+                <TriangleVisualizer 
+                  angle={currentExampleData.triangleData.angle}
+                  opposite={currentExampleData.triangleData.opposite}
+                  adjacent={currentExampleData.triangleData.adjacent}
+                  hypotenuse={currentExampleData.triangleData.hypotenuse}
+                  unknown={currentExampleData.triangleData.unknown}
+                />
+              )}
+
+              {/* SOH-CAH-TOA Helper */}
+              {currentStepData.ratio && (
+                <SOHCAHTOAHelper activeRatio={currentStepData.ratio} />
+              )}
 
               {/* Progress */}
               <div style={{ marginBottom: '24px' }}>

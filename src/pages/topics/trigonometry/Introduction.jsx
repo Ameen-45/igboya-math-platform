@@ -1,6 +1,166 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 
+// Triangle Visualizer Component
+function TriangleVisualizer({ angle = 30, opposite = 5, adjacent = 8.66, hypotenuse = 10, showLabels = true }) {
+  const width = 350;
+  const height = 280;
+  const padding = 50;
+  
+  // Calculate triangle points
+  const startX = padding;
+  const startY = height - padding;
+  const endX = startX + (adjacent / hypotenuse) * (width - 2 * padding);
+  const endY = startY;
+  const peakX = startX + (opposite / hypotenuse) * (width - 2 * padding);
+  const peakY = startY - (opposite / adjacent) * (height - 2 * padding);
+  
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #F8FAFC, #F1F5F9)',
+      borderRadius: '20px',
+      padding: '20px',
+      textAlign: 'center',
+      border: '1px solid #E2E8F0',
+      marginBottom: '20px'
+    }}>
+      <svg width="100%" height="240" viewBox={`0 0 ${width} ${height}`} style={{ maxWidth: '450px', margin: '0 auto' }}>
+        {/* Triangle */}
+        <polygon 
+          points={`${startX},${startY} ${endX},${endY} ${peakX},${peakY}`} 
+          fill="#FEE2E2" 
+          stroke="#EF4444" 
+          strokeWidth="2.5"
+        />
+        
+        {/* Right angle marker */}
+        <polyline
+          points={`${endX - 25},${endY} ${endX - 25},${endY - 25} ${endX},${endY - 25}`}
+          fill="none"
+          stroke="#EF4444"
+          strokeWidth="2"
+        />
+        
+        {/* Angle arc */}
+        <path
+          d={`M ${startX + 30} ${startY - 5} A 30 30 0 0 1 ${startX + 25} ${startY - 25}`}
+          fill="none"
+          stroke="#F59E0B"
+          strokeWidth="2.5"
+        />
+        
+        {/* Angle label */}
+        <text x={startX + 35} y={startY - 20} fill="#F59E0B" fontSize="16" fontWeight="bold">
+          θ
+        </text>
+        
+        {/* Side labels */}
+        {showLabels && (
+          <>
+            <text x={(startX + peakX) / 2 - 25} y={(startY + peakY) / 2 - 5} fill="#10B981" fontSize="12" fontWeight="bold">
+              Opposite (O)
+            </text>
+            
+            <text x={(startX + endX) / 2} y={startY + 20} fill="#3B82F6" fontSize="12" fontWeight="bold">
+              Adjacent (A)
+            </text>
+            
+            <text x={(endX + peakX) / 2 + 10} y={(endY + peakY) / 2 - 15} fill="#8B5CF6" fontSize="12" fontWeight="bold">
+              Hypotenuse (H)
+            </text>
+          </>
+        )}
+      </svg>
+      
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(3, 1fr)', 
+        gap: '12px',
+        marginTop: '8px',
+        fontSize: '12px'
+      }}>
+        <div style={{ color: '#F59E0B', background: '#FEF3C7', padding: '6px', borderRadius: '8px' }}>
+          ∠θ = {angle}°
+        </div>
+        <div style={{ color: '#10B981', background: '#D1FAE5', padding: '6px', borderRadius: '8px' }}>
+          Opposite = {opposite}
+        </div>
+        <div style={{ color: '#3B82F6', background: '#DBEAFE', padding: '6px', borderRadius: '8px' }}>
+          Adjacent = {adjacent}
+        </div>
+        <div style={{ color: '#8B5CF6', background: '#EDE9FE', padding: '6px', borderRadius: '8px' }}>
+          Hypotenuse = {hypotenuse}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// SOH-CAH-TOA Visual Component
+function SOHCAHTOADisplay() {
+  const [activeRatio, setActiveRatio] = useState('sin');
+  
+  const ratios = {
+    sin: { name: 'SIN', formula: 'Opposite / Hypotenuse', example: 'sin(θ) = O/H', color: '#10B981', hint: 'SOH' },
+    cos: { name: 'COS', formula: 'Adjacent / Hypotenuse', example: 'cos(θ) = A/H', color: '#3B82F6', hint: 'CAH' },
+    tan: { name: 'TAN', formula: 'Opposite / Adjacent', example: 'tan(θ) = O/A', color: '#F59E0B', hint: 'TOA' }
+  };
+  
+  return (
+    <div style={{
+      background: 'white',
+      borderRadius: '20px',
+      padding: '20px',
+      border: '1px solid #E2E8F0',
+      marginBottom: '20px'
+    }}>
+      <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0F172A', marginBottom: '16px', textAlign: 'center' }}>
+        SOH-CAH-TOA Memory Aid
+      </h4>
+      
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        {Object.entries(ratios).map(([key, ratio]) => (
+          <button
+            key={key}
+            onClick={() => setActiveRatio(key)}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: activeRatio === key ? ratio.color : '#F1F5F9',
+              color: activeRatio === key ? 'white' : '#64748B',
+              border: 'none',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              fontWeight: '700',
+              fontSize: '18px',
+              transition: 'all 0.2s'
+            }}
+          >
+            {ratio.name}
+            <span style={{ display: 'block', fontSize: '10px', opacity: 0.9 }}>{ratio.hint}</span>
+          </button>
+        ))}
+      </div>
+      
+      <div style={{
+        background: '#F8FAFC',
+        borderRadius: '16px',
+        padding: '20px',
+        textAlign: 'center',
+        border: '1px solid #E2E8F0'
+      }}>
+        <div style={{ fontSize: '14px', color: '#64748B', marginBottom: '8px' }}>Formula</div>
+        <div style={{ fontSize: '24px', fontWeight: '700', color: ratios[activeRatio].color, fontFamily: 'monospace' }}>
+          {ratios[activeRatio].formula}
+        </div>
+        <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '8px' }}>
+          {ratios[activeRatio].example}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TrigonometryIntroduction() {
   const [currentSection, setCurrentSection] = useState(-1)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -27,48 +187,43 @@ export default function TrigonometryIntroduction() {
       content: `Trigonometry is the branch of mathematics that studies relationships between angles and sides of triangles. It's used everywhere - from architecture and engineering to music and space exploration!
 
 In this course, you'll learn:
+• Understanding Angles and Triangles
 • Trigonometric Ratios (SOH-CAH-TOA)
 • The Unit Circle and Angle Measures
 • Solving Right Triangles
-• Applications in Real Life
-• Trigonometric Functions and Graphs
+• Real-World Applications
 
 Trigonometry opens doors to physics, engineering, computer graphics, and navigation. Ready to explore the world of triangles and angles? Let's dive in!`,
-      voiceText: `Welcome to Trigonometry! Trigonometry is the branch of mathematics that studies relationships between angles and sides of triangles. It's used everywhere from architecture and engineering to music and space exploration. In this course, you will learn trigonometric ratios like SOH-CAH-TOA, the unit circle, solving right triangles, real-life applications, and trigonometric functions. Ready to explore triangles and angles? Let's dive in!`,
+      voiceText: `Welcome to Trigonometry! Trigonometry is the branch of mathematics that studies relationships between angles and sides of triangles. It's used everywhere from architecture and engineering to music and space exploration. In this course, you will learn about angles and triangles, trigonometric ratios like SOH-CAH-TOA, the unit circle, solving right triangles, and real-world applications. Ready to explore triangles and angles? Let's dive in!`,
       type: "welcome",
       button: "Let's Begin!",
       icon: "📐",
       duration: "4 min",
-      keyPoints: ["Trigonometric Ratios", "Unit Circle", "Right Triangles", "Real Applications"]
+      keyPoints: ["Angles & Triangles", "Trigonometric Ratios", "Unit Circle", "Real Applications"]
     },
     {
-      title: "What is Trigonometry? 🔍",
-      content: `Think of trigonometry as the language of triangles. It helps us find unknown sides and angles using special relationships.
+      title: "Anatomy of a Right Triangle 🔺",
+      content: `Before diving into trigonometry, let's understand the parts of a right triangle:
 
-The word "Trigonometry" comes from Greek:
-• "Trigonon" meaning triangle
-• "Metron" meaning measure
+• Right Angle: The 90° angle (marked with a square)
+• Hypotenuse: The longest side, opposite the right angle
+• Opposite Side: The side opposite to angle θ
+• Adjacent Side: The side next to angle θ
 
-So trigonometry literally means "triangle measurement"!
-
-Real-world applications:
-• Architects use it to design buildings
-• Pilots use it for navigation
-• Sound engineers use it for music waves
-• Game developers use it for 3D graphics`,
-      voiceText: `Think of trigonometry as the language of triangles. It helps us find unknown sides and angles using special relationships. The word Trigonometry comes from Greek meaning triangle measurement. Architects use it to design buildings. Pilots use it for navigation. Sound engineers use it for music waves. Game developers use it for 3D graphics.`,
+The hypotenuse is always the longest side. The opposite and adjacent sides change depending on which acute angle you're focusing on!`,
+      voiceText: `Let's understand the parts of a right triangle. The right angle is 90 degrees, marked with a square. The hypotenuse is the longest side, opposite the right angle. The opposite side is opposite to angle theta. The adjacent side is next to angle theta. The hypotenuse is always the longest side.`,
       type: "concept",
       button: "Continue",
-      icon: "🔍",
+      icon: "🔺",
       duration: "5 min",
-      keyPoints: ["Triangle measurement", "Angle-side relationships", "Real-world applications"]
+      keyPoints: ["Hypotenuse = longest side", "Opposite = across from angle", "Adjacent = next to angle"]
     },
     {
-      title: "SOH-CAH-TOA 📏",
-      content: `The three main trigonometric ratios are:
+      title: "SOH-CAH-TOA Explained 📏",
+      content: `The three main trigonometric ratios form the foundation of trigonometry:
 
 📌 SINE (sin) = Opposite / Hypotenuse
-📌 COSINE (cos) = Adjacent / Hypotenuse
+📌 COSINE (cos) = Adjacent / Hypotenuse  
 📌 TANGENT (tan) = Opposite / Adjacent
 
 Remember the acronym: SOH-CAH-TOA
@@ -77,8 +232,8 @@ Remember the acronym: SOH-CAH-TOA
 • CAH: Cosine = Adjacent / Hypotenuse
 • TOA: Tangent = Opposite / Adjacent
 
-Example: In a right triangle with angle θ, if the opposite side is 3 and the hypotenuse is 5, then sin(θ) = 3/5 = 0.6`,
-      voiceText: `The three main trigonometric ratios are sine, cosine, and tangent. Remember SOH-CAH-TOA. SOH means sine equals opposite over hypotenuse. CAH means cosine equals adjacent over hypotenuse. TOA means tangent equals opposite over adjacent.`,
+These ratios are constant for any given angle, no matter the size of the triangle!`,
+      voiceText: `The three main trigonometric ratios are sine, cosine, and tangent. Remember SOH-CAH-TOA. SOH means sine equals opposite over hypotenuse. CAH means cosine equals adjacent over hypotenuse. TOA means tangent equals opposite over adjacent. These ratios are constant for any given angle.`,
       type: "concept",
       button: "Continue",
       icon: "📏",
@@ -86,16 +241,38 @@ Example: In a right triangle with angle θ, if the opposite side is 3 and the hy
       keyPoints: ["SOH = Opposite/Hypotenuse", "CAH = Adjacent/Hypotenuse", "TOA = Opposite/Adjacent"]
     },
     {
-      title: "Practice the Ratios 🎯",
+      title: "Visual Example - 30-60-90 Triangle",
+      content: `Let's see how trigonometric ratios work with a 30-60-90 triangle!
+
+In a 30-60-90 triangle:
+• sin(30°) = 1/2 = 0.5
+• cos(30°) = √3/2 ≈ 0.866
+• tan(30°) = 1/√3 ≈ 0.577
+
+For the triangle shown, with angle θ = 30°:
+• Opposite side = 5 units
+• Hypotenuse = 10 units  
+• Adjacent side = 8.66 units
+
+Check: sin(30°) = Opposite/Hypotenuse = 5/10 = 0.5 ✓`,
+      voiceText: `Let's see how trigonometric ratios work with a 30-60-90 triangle. Sine of 30 degrees is 0.5. Cosine of 30 degrees is approximately 0.866. Tangent of 30 degrees is approximately 0.577. For the triangle shown with angle 30 degrees, opposite is 5, hypotenuse is 10, adjacent is 8.66. Check: sine of 30 degrees equals opposite over hypotenuse equals 5 over 10 equals 0.5.`,
+      type: "visual",
+      button: "Continue",
+      icon: "👁️",
+      duration: "6 min",
+      keyPoints: ["30° triangle ratios", "Use SOH-CAH-TOA", "Verify calculations"]
+    },
+    {
+      title: "Practice with Ratios 🎯",
       content: `Let's test your understanding of the trigonometric ratios!
 
-In a right triangle:
-• Opposite side = 4
-• Adjacent side = 3
-• Hypotenuse = 5
+In the triangle shown:
+• Opposite side = 4 units
+• Adjacent side = 3 units  
+• Hypotenuse = 5 units
 
 Find sin(θ), cos(θ), and tan(θ)`,
-      voiceText: `Let's practice the ratios. In a right triangle, opposite side is 4, adjacent side is 3, hypotenuse is 5. Find sine, cosine, and tangent of angle theta.`,
+      voiceText: `Let's practice the ratios. In this right triangle, opposite side is 4, adjacent side is 3, hypotenuse is 5. Find sine, cosine, and tangent of angle theta.`,
       type: "interactive",
       question: "What is sin(θ)?",
       answer: "4/5",
@@ -104,7 +281,7 @@ Find sin(θ), cos(θ), and tan(θ)`,
       button: "Check Answer",
       icon: "🎯",
       duration: "4 min",
-      keyPoints: ["Remember SOH-CAH-TOA", "Opposite/Hypotenuse = Sine", "Adjacent/Hypotenuse = Cosine", "Opposite/Adjacent = Tangent"]
+      keyPoints: ["Remember SOH-CAH-TOA", "Opposite/Hypotenuse = Sine"]
     },
     {
       title: "Finding Missing Sides 📐",
@@ -323,8 +500,8 @@ The opposite side is 5 units!`,
               gap: '8px',
               marginBottom: '24px'
             }}>
-              <span style={{ background: '#FEE2E2', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', color: '#DC2626' }}>5 Lessons</span>
-              <span style={{ background: '#FEE2E2', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', color: '#DC2626' }}>~24 min</span>
+              <span style={{ background: '#FEE2E2', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', color: '#DC2626' }}>6 Lessons</span>
+              <span style={{ background: '#FEE2E2', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', color: '#DC2626' }}>~30 min</span>
               <span style={{ background: '#FEE2E2', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', color: '#DC2626' }}>Beginner Friendly</span>
             </div>
             <button
@@ -459,6 +636,21 @@ The opposite side is 5 units!`,
                     </span>
                   ))}
                 </div>
+              )}
+
+              {/* Visual Section */}
+              {currentSection === 1 && (
+                <TriangleVisualizer angle={30} opposite={5} adjacent={8.66} hypotenuse={10} />
+              )}
+              
+              {currentSection === 2 && <SOHCAHTOADisplay />}
+              
+              {currentSection === 3 && (
+                <TriangleVisualizer angle={30} opposite={5} adjacent={8.66} hypotenuse={10} />
+              )}
+              
+              {currentSection === 4 && (
+                <TriangleVisualizer angle={53.13} opposite={4} adjacent={3} hypotenuse={5} />
               )}
 
               {/* Content */}

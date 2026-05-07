@@ -1,6 +1,130 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 
+// Triangle Visualization Component
+function TriangleVisualizer({ type = 'right', a = null, b = null, c = null, angleA = null, angleB = null, angleC = null }) {
+  const width = 400;
+  const height = 300;
+  const padding = 60;
+  
+  // Default values for demo
+  const sideA = a || 8;
+  const sideB = b || 6;
+  const sideC = c || 10;
+  
+  // Calculate points for a generic triangle
+  const startX = padding;
+  const startY = height - padding;
+  const endX = startX + sideB;
+  const endY = startY;
+  const peakX = startX + (sideA * Math.cos(angleA * Math.PI / 180 || 0.6));
+  const peakY = startY - sideA * Math.sin(angleA * Math.PI / 180 || 0.8);
+  
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #F8FAFC, #F1F5F9)',
+      borderRadius: '20px',
+      padding: '20px',
+      textAlign: 'center',
+      border: '1px solid #E2E8F0',
+      marginBottom: '20px'
+    }}>
+      <svg width="100%" height="260" viewBox={`0 0 ${width} ${height}`} style={{ maxWidth: '500px', margin: '0 auto' }}>
+        <polygon 
+          points={`${startX},${startY} ${endX},${endY} ${peakX},${peakY}`} 
+          fill="#FEE2E2" 
+          stroke="#EF4444" 
+          strokeWidth="2.5"
+        />
+        
+        {type === 'right' && (
+          <polyline
+            points={`${endX - 30},${endY} ${endX - 30},${endY - 30} ${endX},${endY - 30}`}
+            fill="none"
+            stroke="#EF4444"
+            strokeWidth="2"
+          />
+        )}
+        
+        {/* Angle arcs */}
+        {angleA && (
+          <>
+            <path
+              d={`M ${startX + 30} ${startY - 5} A 30 30 0 0 1 ${startX + 25} ${startY - 25}`}
+              fill="none"
+              stroke="#F59E0B"
+              strokeWidth="2.5"
+            />
+            <text x={startX + 35} y={startY - 20} fill="#F59E0B" fontSize="14" fontWeight="bold">
+              {angleA}°
+            </text>
+          </>
+        )}
+        
+        {angleB && (
+          <>
+            <path
+              d={`M ${endX - 30} ${endY - 5} A 30 30 0 0 0 ${endX - 5} ${endY - 25}`}
+              fill="none"
+              stroke="#F59E0B"
+              strokeWidth="2.5"
+            />
+            <text x={endX - 45} y={endY - 20} fill="#F59E0B" fontSize="14" fontWeight="bold">
+              {angleB}°
+            </text>
+          </>
+        )}
+        
+        {/* Side labels */}
+        {sideA && (
+          <text x={(startX + peakX) / 2 - 20} y={(startY + peakY) / 2 - 5} fill="#10B981" fontSize="12" fontWeight="bold">
+            a = {sideA.toFixed(2)}
+          </text>
+        )}
+        
+        {sideB && (
+          <text x={(startX + endX) / 2} y={startY + 20} fill="#3B82F6" fontSize="12" fontWeight="bold">
+            b = {sideB.toFixed(2)}
+          </text>
+        )}
+        
+        {sideC && (
+          <text x={(endX + peakX) / 2 + 5} y={(endY + peakY) / 2 - 10} fill="#8B5CF6" fontSize="12" fontWeight="bold">
+            c = {sideC.toFixed(2)}
+          </text>
+        )}
+      </svg>
+      
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(3, 1fr)', 
+        gap: '12px',
+        marginTop: '8px',
+        fontSize: '12px'
+      }}>
+        {angleA && <div style={{ background: '#FEF3C7', padding: '6px', borderRadius: '8px' }}>
+          <span style={{ color: '#F59E0B', fontWeight: 'bold' }}>∠A = {angleA}°</span>
+        </div>}
+        {sideA && <div style={{ background: '#D1FAE5', padding: '6px', borderRadius: '8px' }}>
+          <span style={{ color: '#10B981', fontWeight: 'bold' }}>Side a = {sideA.toFixed(2)}</span>
+        </div>}
+        {angleB && <div style={{ background: '#FEF3C7', padding: '6px', borderRadius: '8px' }}>
+          <span style={{ color: '#F59E0B', fontWeight: 'bold' }}>∠B = {angleB}°</span>
+        </div>}
+        {sideB && <div style={{ background: '#DBEAFE', padding: '6px', borderRadius: '8px' }}>
+          <span style={{ color: '#3B82F6', fontWeight: 'bold' }}>Side b = {sideB.toFixed(2)}</span>
+        </div>}
+        {angleC && <div style={{ background: '#FEF3C7', padding: '6px', borderRadius: '8px' }}>
+          <span style={{ color: '#F59E0B', fontWeight: 'bold' }}>∠C = {angleC}°</span>
+        </div>}
+        {sideC && <div style={{ background: '#EDE9FE', padding: '6px', borderRadius: '8px' }}>
+          <span style={{ color: '#8B5CF6', fontWeight: 'bold' }}>Side c = {sideC.toFixed(2)}</span>
+        </div>}
+      </div>
+    </div>
+  );
+}
+
 export default function TriangleSolver() {
   const [solverType, setSolverType] = useState('right-triangle')
   const [inputs, setInputs] = useState({})
@@ -29,9 +153,9 @@ export default function TriangleSolver() {
       inputs: [
         { name: 'angleA', label: 'Angle A (degrees)', type: 'number', min: 0, max: 90, placeholder: 'e.g., 30' },
         { name: 'angleB', label: 'Angle B (degrees)', type: 'number', min: 0, max: 90, placeholder: 'e.g., 60' },
-        { name: 'sideA', label: 'Side A (opposite A)', type: 'number', min: 0, placeholder: 'e.g., 5' },
-        { name: 'sideB', label: 'Side B (opposite B)', type: 'number', min: 0, placeholder: 'e.g., 8.66' },
-        { name: 'sideC', label: 'Side C (hypotenuse)', type: 'number', min: 0, placeholder: 'e.g., 10' }
+        { name: 'sideA', label: 'Side a (opposite A)', type: 'number', min: 0, placeholder: 'e.g., 5' },
+        { name: 'sideB', label: 'Side b (opposite B)', type: 'number', min: 0, placeholder: 'e.g., 8.66' },
+        { name: 'sideC', label: 'Side c (hypotenuse)', type: 'number', min: 0, placeholder: 'e.g., 10' }
       ],
       calculate: (inputs) => calculateRightTriangle(inputs),
       steps: (inputs, results) => generateRightTriangleSteps(inputs, results),
@@ -47,9 +171,9 @@ export default function TriangleSolver() {
         { name: 'angleA', label: 'Angle A (degrees)', type: 'number', min: 0, max: 180, placeholder: 'e.g., 40' },
         { name: 'angleB', label: 'Angle B (degrees)', type: 'number', min: 0, max: 180, placeholder: 'e.g., 60' },
         { name: 'angleC', label: 'Angle C (degrees)', type: 'number', min: 0, max: 180, placeholder: 'e.g., 80' },
-        { name: 'sideA', label: 'Side A (opposite A)', type: 'number', min: 0, placeholder: 'e.g., 8' },
-        { name: 'sideB', label: 'Side B (opposite B)', type: 'number', min: 0, placeholder: 'e.g., 10.78' },
-        { name: 'sideC', label: 'Side C (opposite C)', type: 'number', min: 0, placeholder: 'e.g., 12' }
+        { name: 'sideA', label: 'Side a (opposite A)', type: 'number', min: 0, placeholder: 'e.g., 8' },
+        { name: 'sideB', label: 'Side b (opposite B)', type: 'number', min: 0, placeholder: 'e.g., 10.78' },
+        { name: 'sideC', label: 'Side c (opposite C)', type: 'number', min: 0, placeholder: 'e.g., 12' }
       ],
       calculate: (inputs) => calculateSineRule(inputs),
       steps: (inputs, results) => generateSineRuleSteps(inputs, results),
@@ -63,9 +187,9 @@ export default function TriangleSolver() {
       gradient: 'linear-gradient(135deg, #F59E0B, #D97706)',
       inputs: [
         { name: 'angleA', label: 'Angle A (degrees)', type: 'number', min: 0, max: 180, placeholder: 'e.g., 50' },
-        { name: 'sideA', label: 'Side A (opposite A)', type: 'number', min: 0, placeholder: 'e.g., 7' },
-        { name: 'sideB', label: 'Side B', type: 'number', min: 0, placeholder: 'e.g., 7' },
-        { name: 'sideC', label: 'Side C', type: 'number', min: 0, placeholder: 'e.g., 9' }
+        { name: 'sideA', label: 'Side a (opposite A)', type: 'number', min: 0, placeholder: 'e.g., 7' },
+        { name: 'sideB', label: 'Side b', type: 'number', min: 0, placeholder: 'e.g., 7' },
+        { name: 'sideC', label: 'Side c', type: 'number', min: 0, placeholder: 'e.g., 9' }
       ],
       calculate: (inputs) => calculateCosineRule(inputs),
       steps: (inputs, results) => generateCosineRuleSteps(inputs, results),
@@ -78,9 +202,9 @@ export default function TriangleSolver() {
       color: '#EC4899',
       gradient: 'linear-gradient(135deg, #EC4899, #BE185D)',
       inputs: [
-        { name: 'sideA', label: 'Side A', type: 'number', min: 0, placeholder: 'e.g., 8' },
-        { name: 'sideB', label: 'Side B', type: 'number', min: 0, placeholder: 'e.g., 10' },
-        { name: 'sideC', label: 'Side C', type: 'number', min: 0, placeholder: 'e.g., 12' },
+        { name: 'sideA', label: 'Side a', type: 'number', min: 0, placeholder: 'e.g., 8' },
+        { name: 'sideB', label: 'Side b', type: 'number', min: 0, placeholder: 'e.g., 10' },
+        { name: 'sideC', label: 'Side c', type: 'number', min: 0, placeholder: 'e.g., 12' },
         { name: 'angleA', label: 'Angle A (degrees)', type: 'number', min: 0, max: 180, placeholder: 'e.g., 60' },
         { name: 'base', label: 'Base', type: 'number', min: 0, placeholder: 'e.g., 10' },
         { name: 'height', label: 'Height', type: 'number', min: 0, placeholder: 'e.g., 8.66' }
@@ -236,8 +360,8 @@ export default function TriangleSolver() {
     steps.push({
       title: "Step 4: Calculate Results",
       content: "Compute all missing values.",
-      explanation: `Side A = ${results.sideA?.toFixed(2)}\nSide B = ${results.sideB?.toFixed(2)}\nSide C = ${results.sideC?.toFixed(2)}`,
-      voiceText: `Step 4. Calculate results. Side A is ${results.sideA?.toFixed(2)}. Side B is ${results.sideB?.toFixed(2)}. Side C is ${results.sideC?.toFixed(2)}.`
+      explanation: `Side a = ${results.sideA?.toFixed(2)}\nSide b = ${results.sideB?.toFixed(2)}\nSide c = ${results.sideC?.toFixed(2)}`,
+      voiceText: `Step 4. Calculate results. Side a is ${results.sideA?.toFixed(2)}. Side b is ${results.sideB?.toFixed(2)}. Side c is ${results.sideC?.toFixed(2)}.`
     })
 
     return steps
@@ -291,10 +415,10 @@ export default function TriangleSolver() {
 
     if (inputs.sideB && inputs.sideC && inputs.angleA) {
       steps.push({
-        title: "Step 2: Calculate Side A",
+        title: "Step 2: Calculate Side a",
         content: "Use cosine rule to find the missing side.",
         explanation: `a² = ${inputs.sideB}² + ${inputs.sideC}² - 2×${inputs.sideB}×${inputs.sideC}×cos(${inputs.angleA}°)`,
-        voiceText: `Step 2. Calculate side A. a squared equals ${inputs.sideB} squared plus ${inputs.sideC} squared minus 2 times ${inputs.sideB} times ${inputs.sideC} times cosine of ${inputs.angleA} degrees.`
+        voiceText: `Step 2. Calculate side a. a squared equals ${inputs.sideB} squared plus ${inputs.sideC} squared minus 2 times ${inputs.sideB} times ${inputs.sideC} times cosine of ${inputs.angleA} degrees.`
       })
     } else {
       steps.push({
@@ -323,7 +447,7 @@ export default function TriangleSolver() {
         title: "Step 1: Trigonometric Area Formula",
         content: "Use: Area = ½ × a × b × sin(C)",
         explanation: `Area = 0.5 × ${inputs.sideA} × ${inputs.sideB} × sin(${inputs.angleA}°) = ${results.area?.toFixed(2)}`,
-        voiceText: `Step 1. Use trigonometric area formula. Area equals 0.5 times side A ${inputs.sideA} times side B ${inputs.sideB} times sine of angle A ${inputs.angleA} degrees. Area is ${results.area?.toFixed(2)}.`
+        voiceText: `Step 1. Use trigonometric area formula. Area equals 0.5 times side a ${inputs.sideA} times side b ${inputs.sideB} times sine of angle A ${inputs.angleA} degrees. Area is ${results.area?.toFixed(2)}.`
       })
     } else {
       steps.push({
@@ -645,10 +769,23 @@ export default function TriangleSolver() {
                   <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#065F46', marginBottom: '16px' }}>
                     Solution Results
                   </h3>
+                  
+                  {/* Triangle Visualization */}
+                  <TriangleVisualizer 
+                    type={solverType === 'right-triangle' ? 'right' : 'general'}
+                    a={results.sideA}
+                    b={results.sideB}
+                    c={results.sideC}
+                    angleA={results.angleA}
+                    angleB={results.angleB}
+                    angleC={90}
+                  />
+                  
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-                    gap: '12px'
+                    gap: '12px',
+                    marginTop: '16px'
                   }}>
                     {Object.entries(results).map(([key, value]) => (
                       value !== undefined && value !== '' && (
