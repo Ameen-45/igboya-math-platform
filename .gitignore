@@ -17,3 +17,6 @@ dist/
 node_modules/
 dist/
 .vercel/
+dist/
+.vercel/
+.vite/
