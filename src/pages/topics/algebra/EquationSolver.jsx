@@ -61,10 +61,8 @@ export default function EquationSolver() {
   }, [stopSpeech])
 
   /* ============================================================
-     HELPERS — NORMALIZATION & PARSING
+     HELPERS
      ============================================================ */
-
-  // Clean raw input: remove spaces, unify symbols
   const normalize = (raw) =>
     raw
       .replace(/\s+/g, '')
@@ -73,138 +71,202 @@ export default function EquationSolver() {
       .replace(/÷/g, '/')
       .replace(/−/g, '-')
 
-  // Find all distinct variable letters in an expression
   const extractVariables = (expr) => {
     const letters = expr.match(/[a-zA-Z]/g) || []
     return [...new Set(letters.map(l => l.toLowerCase()))]
   }
 
-  // Safe numeric parse (returns null if not a number)
-  const safeNum = (s) => {
-    if (s === '' || s === undefined || s === null) return null
-    const n = Number(s)
-    return Number.isFinite(n) ? n : null
-  }
-
   /* ============================================================
-     EXPRESSION EVALUATOR (for one side of an equation)
-     Returns { coeff, constant } for linear
-     i.e. value = coeff * variable + constant
-     Supports: +, -, *, /, parentheses, fractions, decimals
+     TOKENIZER — handles unary minus properly
      ============================================================ */
-  const evaluateExpression = (expr, variable) => {
-    // Shunting-yard with single variable support
-    // Tokenize
+  const tokenize = (expr, variable) => {
     const tokens = []
     let i = 0
+    let expectOperand = true // at start, we expect a number/variable/unary sign
+
     while (i < expr.length) {
       const ch = expr[i]
 
-      if (ch === '+' || ch === '-' || ch === '*' || ch === '/' || ch === '(' || ch === ')') {
-        // Handle unary minus / plus at start or after operator or '('
-        if ((ch === '-' || ch === '+') && (tokens.length === 0 || ['+', '-', '*', '/', '('].includes(tokens[tokens.length - 1]))) {
-          tokens.push('u' + ch) // unary
+      if (ch === ' ' || ch === '\t') { i++; continue }
+
+      if (ch === '+' || ch === '-') {
+        if (expectOperand) {
+          tokens.push({ type: 'unary', op: ch })
         } else {
-          tokens.push(ch)
+          tokens.push({ type: 'binary', op: ch })
         }
+        expectOperand = true
         i++
         continue
       }
 
+      if (ch === '*' || ch === '/') {
+        tokens.push({ type: 'binary', op: ch })
+        expectOperand = true
+        i++
+        continue
+      }
+
+      if (ch === '^') {
+        tokens.push({ type: 'binary', op: '^' })
+        expectOperand = true
+        i++
+        continue
+      }
+
+      if (ch === '(') {
+        tokens.push({ type: 'paren', op: '(' })
+        expectOperand = true
+        i++
+        continue
+      }
+
+      if (ch === ')') {
+        tokens.push({ type: 'paren', op: ')' })
+        expectOperand = false
+        i++
+        continue
+      }
+
+      // Number (possibly with decimal)
       if (/\d/.test(ch) || ch === '.') {
         let num = ''
         while (i < expr.length && /[\d.]/.test(expr[i])) {
           num += expr[i]
           i++
         }
-        tokens.push(Number(num))
+        tokens.push({ type: 'number', value: parseFloat(num) })
+        expectOperand = false
         continue
       }
 
-      if (ch.toLowerCase() === variable.toLowerCase()) {
-        tokens.push({ var: variable })
+      // Variable letter
+      if (/[a-zA-Z]/.test(ch)) {
+        // Handle explicit exponent:  y^2  →  we already pushed ^ before, so it's fine
+        // Handle implicit exponent like y² (already normalized to y^2)
+        if (ch.toLowerCase() === variable.toLowerCase()) {
+          tokens.push({ type: 'variable', name: variable })
+        } else {
+          // Ignore other letters (e.g., the "e" in scientific notation is not supported)
+          throw new Error(`Unknown variable: ${ch}`)
+        }
+        expectOperand = false
         i++
         continue
       }
 
-      // Unknown character — throw
       throw new Error(`Unsupported character: ${ch}`)
     }
 
-    // Shunting-yard to RPN
-    const precedence = { '+': 1, '-': 1, '*': 2, '/': 2, 'u+': 3, 'u-': 3 }
+    return tokens
+  }
+
+  /* ============================================================
+     SHUNTING YARD  (with unary & power support)
+     ============================================================ */
+  const toRPN = (tokens) => {
     const output = []
     const ops = []
+    const precedence = { '+': 1, '-': 1, '*': 2, '/': 2, '^': 3, 'u-': 4, 'u+': 4 }
+    const rightAssoc = { '^': true, 'u-': true, 'u+': true }
 
     for (const t of tokens) {
-      if (typeof t === 'number' || (typeof t === 'object' && t.var)) {
+      if (t.type === 'number' || t.type === 'variable') {
         output.push(t)
-      } else if (t === '(') {
-        ops.push(t)
-      } else if (t === ')') {
-        while (ops.length && ops[ops.length - 1] !== '(') {
-          output.push(ops.pop())
-        }
-        if (!ops.length) throw new Error('Mismatched parentheses')
-        ops.pop() // remove '('
-      } else {
+      } else if (t.type === 'unary') {
+        // Convert unary to a marker
+        ops.push({ type: 'operator', op: t.op === '-' ? 'u-' : 'u+' })
+      } else if (t.type === 'binary') {
         while (
           ops.length &&
-          ops[ops.length - 1] !== '(' &&
-          precedence[ops[ops.length - 1]] >= precedence[t]
+          ops[ops.length - 1].type === 'operator' &&
+          (
+            precedence[ops[ops.length - 1].op] > precedence[t.op] ||
+            (precedence[ops[ops.length - 1].op] === precedence[t.op] && !rightAssoc[t.op])
+          )
         ) {
           output.push(ops.pop())
         }
-        ops.push(t)
+        ops.push({ type: 'operator', op: t.op })
+      } else if (t.type === 'paren') {
+        if (t.op === '(') {
+          ops.push(t)
+        } else {
+          while (ops.length && !(ops[ops.length - 1].type === 'paren' && ops[ops.length - 1].op === '(')) {
+            output.push(ops.pop())
+          }
+          if (!ops.length) throw new Error('Mismatched parentheses')
+          ops.pop() // remove '('
+        }
       }
     }
+
     while (ops.length) {
-      const op = ops.pop()
-      if (op === '(') throw new Error('Mismatched parentheses')
-      output.push(op)
+      const top = ops.pop()
+      if (top.type === 'paren') throw new Error('Mismatched parentheses')
+      output.push(top)
     }
 
-    // Evaluate RPN → gives { coeff, constant }
+    return output
+  }
+
+  /* ============================================================
+     RPN EVALUATOR → returns { coeff, constant } for linear
+     ============================================================ */
+  const evaluateRPN = (rpn) => {
     const stack = []
-    for (const t of output) {
-      if (typeof t === 'number') {
-        stack.push({ coeff: 0, constant: t })
-      } else if (typeof t === 'object' && t.var) {
+    for (const t of rpn) {
+      if (t.type === 'number') {
+        stack.push({ coeff: 0, constant: t.value })
+      } else if (t.type === 'variable') {
         stack.push({ coeff: 1, constant: 0 })
-      } else if (t === 'u-' || t === 'u+') {
-        const a = stack.pop()
-        if (!a) throw new Error('Invalid expression')
-        if (t === 'u-') stack.push({ coeff: -a.coeff, constant: -a.constant })
-        else stack.push(a)
-      } else {
-        const b = stack.pop()
-        const a = stack.pop()
-        if (!a || !b) throw new Error('Invalid expression')
-        if (t === '+') {
-          stack.push({ coeff: a.coeff + b.coeff, constant: a.constant + b.constant })
-        } else if (t === '-') {
-          stack.push({ coeff: a.coeff - b.coeff, constant: a.constant - b.constant })
-        } else if (t === '*') {
-          // multiplication: (aC + aK)(bC + bK) — linear only if one side has coeff 0
-          if (a.coeff !== 0 && b.coeff !== 0) {
-            throw new Error('Non-linear multiplication (variable × variable)')
+      } else if (t.type === 'operator') {
+        if (t.op === 'u-') {
+          const a = stack.pop()
+          if (!a) throw new Error('Invalid expression')
+          stack.push({ coeff: -a.coeff, constant: -a.constant })
+        } else if (t.op === 'u+') {
+          // no-op
+        } else {
+          const b = stack.pop()
+          const a = stack.pop()
+          if (!a || !b) throw new Error('Invalid expression')
+
+          if (t.op === '+') {
+            stack.push({ coeff: a.coeff + b.coeff, constant: a.constant + b.constant })
+          } else if (t.op === '-') {
+            stack.push({ coeff: a.coeff - b.coeff, constant: a.constant - b.constant })
+          } else if (t.op === '*') {
+            // Only linear multiplication allowed
+            if (a.coeff !== 0 && b.coeff !== 0) throw new Error('Non-linear multiplication')
+            stack.push({
+              coeff: a.coeff * b.constant + b.coeff * a.constant,
+              constant: a.constant * b.constant
+            })
+          } else if (t.op === '/') {
+            if (b.coeff !== 0) throw new Error('Division by variable not supported')
+            if (b.constant === 0) throw new Error('Division by zero')
+            stack.push({
+              coeff: a.coeff / b.constant,
+              constant: a.constant / b.constant
+            })
+          } else if (t.op === '^') {
+            // Only allow a constant exponent applied to a pure number
+            if (a.coeff !== 0) throw new Error('Variable powers not supported in linear mode')
+            if (b.coeff !== 0 || b.constant % 1 !== 0) throw new Error('Invalid exponent')
+            stack.push({ coeff: 0, constant: Math.pow(a.constant, b.constant) })
           }
-          stack.push({
-            coeff: a.coeff * b.constant + b.coeff * a.constant,
-            constant: a.constant * b.constant
-          })
-        } else if (t === '/') {
-          if (b.coeff !== 0) throw new Error('Division by variable not supported')
-          if (b.constant === 0) throw new Error('Division by zero')
-          stack.push({
-            coeff: a.coeff / b.constant,
-            constant: a.constant / b.constant
-          })
         }
       }
     }
     if (stack.length !== 1) throw new Error('Invalid expression')
     return stack[0]
+  }
+
+  const evaluateExpression = (expr, variable) => {
+    const tokens = tokenize(expr, variable)
+    const rpn = toRPN(tokens)
+    return evaluateRPN(rpn)
   }
 
   /* ============================================================
@@ -217,7 +279,6 @@ export default function EquationSolver() {
 
     const vars = extractVariables(eq)
     if (vars.length === 0) return null
-    // For linear, we solve for the first variable found
     const variable = vars[0]
 
     const left = evaluateExpression(leftStr, variable)
@@ -310,38 +371,46 @@ export default function EquationSolver() {
     if (vars.length === 0) return null
     const v = vars[0]
 
-    // Move everything to left
-    // Build a general expression: LEFT - (RIGHT) = 0
-    const combined = `(${leftStr})-(${rightStr})`
+    // Build combined expression:  LEFT - (RIGHT)   →  scan terms
+    const combined = `${leftStr}-(${rightStr})`
 
-    // Extract coefficients a, b, c where a*v² + b*v + c = 0
-    // Strategy: manually scan for v^2, v, and constant terms
-    const getCoeff = (expr, varName) => {
-      let a = 0, b = 0, c = 0
+    // Strip parentheses for linear scanning (safe since we only have +/- and simple terms)
+    const flat = combined.replace(/\(/g, '').replace(/\)/g, '')
+    const cleaned = flat.replace(/-/g, '+-')
+    const rawTerms = cleaned.split('+').filter(t => t !== '')
 
-      // Replace subtraction with +- for clean split
-      const cleaned = expr.replace(/-/g, '+-').replace(/\(/g, '').replace(/\)/g, '')
-      const terms = cleaned.split('+').filter(t => t !== '')
+    let a = 0, b = 0, c = 0
 
-      for (const term of terms) {
-        if (term.includes(`${varName}^2`)) {
-          const coef = term.replace(`${varName}^2`, '')
-          a += coef === '' ? 1 : coef === '-' ? -1 : parseFloat(coef)
-        } else if (term.includes(varName)) {
-          const coef = term.replace(varName, '')
-          b += coef === '' ? 1 : coef === '-' ? -1 : parseFloat(coef)
-        } else {
-          const num = parseFloat(term)
-          if (!isNaN(num)) c += num
-        }
+    for (let term of rawTerms) {
+      term = term.trim()
+      if (term === '') continue
+
+      // Handle v^2
+      const v2Regex = new RegExp(`([+-]?\\d*\\.?\\d*)${v}\\^2`)
+      const m2 = term.match(v2Regex)
+      if (m2) {
+        const coef = m2[1]
+        const val = coef === '' || coef === '+' ? 1 : coef === '-' ? -1 : parseFloat(coef)
+        a += val
+        continue
       }
-      return { a, b, c }
+
+      // Handle v (linear)
+      const v1Regex = new RegExp(`([+-]?\\d*\\.?\\d*)${v}(?!\\^)`)
+      const m1 = term.match(v1Regex)
+      if (m1) {
+        const coef = m1[1]
+        const val = coef === '' || coef === '+' ? 1 : coef === '-' ? -1 : parseFloat(coef)
+        b += val
+        continue
+      }
+
+      // Constant
+      const num = parseFloat(term)
+      if (!isNaN(num)) c += num
     }
 
-    const { a, b, c } = getCoeff(combined, v)
-
     if (a === 0) {
-      // Actually linear
       return solveLinearEquation(rawEq)
     }
 
@@ -421,7 +490,7 @@ export default function EquationSolver() {
         title: "Complex Roots",
         content: `${v} = ${rp} ± ${ip}i`,
         explanation: "The discriminant is negative, so we have complex roots.",
-        voiceText: `The discriminant is negative, so we have complex roots: ${v} equals ${rp} plus or minus ${ip} i.`
+        voiceText: `Complex roots: ${v} equals ${rp} plus or minus ${ip} i.`
       })
       return {
         solution: `${v} = ${rp} ± ${ip}i`,
@@ -445,28 +514,21 @@ export default function EquationSolver() {
     if (vars.length < 2) return null
     const [v1, v2] = vars
 
-    const buildCoeffs = (eqStr) => {
-      const [l, r] = eqStr.split('=')
-      const L = evaluateExpression(l, v1)   // but this only supports ONE variable at a time
-      // For multi-variable, evaluateExpression cannot be used directly.
-      // So we manually parse.
-      return null
-    }
-
-    // Manual linear-system parser (2 variables)
-    const parseLinear2Var = (eqStr, varA, varB) => {
+    const parseLinear2Var = (eqStr) => {
       const [l, r] = eqStr.split('=')
       const parse = (side) => {
         let aC = 0, bC = 0, kC = 0
         const cleaned = side.replace(/-/g, '+-').replace(/\(/g, '').replace(/\)/g, '')
         const terms = cleaned.split('+').filter(t => t !== '')
-        for (const term of terms) {
-          if (term.toLowerCase().includes(varA)) {
-            const coef = term.replace(varA, '')
-            aC += coef === '' ? 1 : coef === '-' ? -1 : parseFloat(coef)
-          } else if (term.toLowerCase().includes(varB)) {
-            const coef = term.replace(varB, '')
-            bC += coef === '' ? 1 : coef === '-' ? -1 : parseFloat(coef)
+        for (let term of terms) {
+          term = term.trim()
+          if (term === '') continue
+          if (term.toLowerCase().includes(v1)) {
+            const coef = term.replace(new RegExp(v1, 'ig'), '')
+            aC += coef === '' || coef === '+' ? 1 : coef === '-' ? -1 : parseFloat(coef)
+          } else if (term.toLowerCase().includes(v2)) {
+            const coef = term.replace(new RegExp(v2, 'ig'), '')
+            bC += coef === '' || coef === '+' ? 1 : coef === '-' ? -1 : parseFloat(coef)
           } else {
             const n = parseFloat(term)
             if (!isNaN(n)) kC += n
@@ -479,12 +541,12 @@ export default function EquationSolver() {
       return {
         a: L.aC - R.aC,
         b: L.bC - R.bC,
-        c: R.kC - L.kC   // move constant to right:  ax + by = c
+        c: R.kC - L.kC
       }
     }
 
-    const e1 = parseLinear2Var(eq1, v1, v2)
-    const e2 = parseLinear2Var(eq2, v1, v2)
+    const e1 = parseLinear2Var(eq1)
+    const e2 = parseLinear2Var(eq2)
 
     const det = e1.a * e2.b - e2.a * e1.b
     const steps = []
@@ -493,14 +555,7 @@ export default function EquationSolver() {
       title: "System of Equations",
       content: parts.join('\n'),
       explanation: `Two equations with variables ${v1} and ${v2}.`,
-      voiceText: `System of equations: ${parts[0]} and ${parts[1]}.`
-    })
-
-    steps.push({
-      title: "Extract Coefficients",
-      content: `${e1.a}${v1} + ${e1.b}${v2} = ${e1.c}\n${e2.a}${v1} + ${e2.b}${v2} = ${e2.c}`,
-      explanation: "Identify coefficients for each variable in both equations.",
-      voiceText: `Equation one: ${e1.a} ${v1} plus ${e1.b} ${v2} equals ${e1.c}. Equation two: ${e2.a} ${v1} plus ${e2.b} ${v2} equals ${e2.c}.`
+      voiceText: `System of equations. Solving for ${v1} and ${v2}.`
     })
 
     if (det === 0) {
@@ -527,14 +582,12 @@ export default function EquationSolver() {
       explanation: "The determinant tells us if the system has a unique solution.",
       voiceText: `The determinant is ${det}.`
     })
-
     steps.push({
       title: `Solve for ${v1}`,
       content: `${v1} = ${xR}`,
       explanation: `Using Cramer's rule.`,
       voiceText: `${v1} equals ${xR}.`
     })
-
     steps.push({
       title: `Solve for ${v2}`,
       content: `${v2} = ${yR}`,
@@ -555,11 +608,8 @@ export default function EquationSolver() {
      ============================================================ */
   const detectAndSolve = (rawEq) => {
     const eq = normalize(rawEq)
-
     if (eq.includes(';')) return solveSystemOfEquations(rawEq)
-
     if (/\^2/.test(eq)) return solveQuadraticEquation(rawEq)
-
     return solveLinearEquation(rawEq)
   }
 
@@ -617,7 +667,7 @@ export default function EquationSolver() {
       }
     } catch (err) {
       console.error('Solving error:', err)
-      setError(`Error: ${err.message || 'Please check the format and try again.'}`)
+      setError(`Error: ${err.message || 'Please check the format.'}`)
       speakText('Error solving equation.')
     } finally {
       setIsSolving(false)
@@ -670,7 +720,7 @@ export default function EquationSolver() {
       padding: isMobile ? '16px' : '24px'
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        
+
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <Link to="/topics/algebra" style={{
@@ -680,11 +730,9 @@ export default function EquationSolver() {
             ← Back to Algebra Topics
           </Link>
           <h1 style={{
-            fontSize: isMobile ? '28px' : '36px',
-            fontWeight: '700',
+            fontSize: isMobile ? '28px' : '36px', fontWeight: '700',
             background: 'linear-gradient(135deg, #6366F1, #8B5CF6, #EC4899)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             marginBottom: '12px'
           }}>
             🧩 Equation Solver
@@ -695,15 +743,14 @@ export default function EquationSolver() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px' }}>
-          
+
           {/* Input Section */}
           <div style={{ flex: 2 }}>
             <div style={{
               background: 'white', borderRadius: '24px',
               padding: isMobile ? '20px' : '28px', border: '1px solid #E2E8F0'
             }}>
-              
-              {/* Equation Input */}
+
               <div style={{ marginBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                   <label style={{ fontSize: '14px', fontWeight: '500', color: '#334155' }}>
@@ -739,7 +786,7 @@ export default function EquationSolver() {
                     {isSolving ? '...' : 'Solve'}
                   </button>
                 </div>
-                
+
                 {error && (
                   <div style={{
                     marginTop: '12px', padding: '12px', background: '#FEE2E2',
@@ -750,7 +797,6 @@ export default function EquationSolver() {
                 )}
               </div>
 
-              {/* Solution Display */}
               {solution && (
                 <div style={{
                   marginBottom: '24px', background: '#ECFDF5',
@@ -772,7 +818,7 @@ export default function EquationSolver() {
                       🔊 Read Solution
                     </button>
                   </div>
-                  
+
                   <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                     <div style={{
                       fontSize: isMobile ? '18px' : '20px',
@@ -860,7 +906,6 @@ export default function EquationSolver() {
                 </div>
               )}
 
-              {/* Equation Types - Collapsible */}
               <div>
                 <button onClick={() => setShowEquationTypes(!showEquationTypes)}
                   style={{
@@ -873,7 +918,7 @@ export default function EquationSolver() {
                   </h3>
                   <span style={{ transform: showEquationTypes ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>▼</span>
                 </button>
-                
+
                 {showEquationTypes && (
                   <div style={{
                     marginTop: '16px',
