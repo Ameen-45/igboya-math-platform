@@ -11,3 +11,6 @@ dist-ssr/
 .idea/
 .vercel
 .env*.local
+node_modules/
+dist/
+.vercel/
